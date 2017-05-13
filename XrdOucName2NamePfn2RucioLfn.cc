@@ -74,9 +74,8 @@ int XrdOucName2NameInvRucio::pfn2lfn(const char* pfn, char* buff, int blen)
 // rucioDID isn't quite ruico DID (scrope:file), rucioDID = scrope/XX/XX/file
 
     std::string myPfn, rucioDID, cachePath;
-    std::string scope, file, tmp;
+    std::string scope, slashScope, file, tmp;
     std::size_t i;
-    std::string::iterator it;
     MD5_CTX c;
     unsigned char md5digest[MD5_DIGEST_LENGTH];
     char md5string[MD5_DIGEST_LENGTH*2+1];
@@ -101,9 +100,16 @@ int XrdOucName2NameInvRucio::pfn2lfn(const char* pfn, char* buff, int blen)
         // The gLFN format is /atlas/rucio/scope:file. 
         // In gLFN "scope" can contain "/". In RUCIO the "/" should be converted to "."
         // Also in RUCIO "file" can't have "/", and "scope" and "file" can't have ":".
-        if (rucioDID.rfind("/") < rucioDID.rfind(":"))
+        //
+        // In PFN, "/" is used in scope instead of ".". It is best for the cache to do 
+        // this as well for gLFN to improve caching efficiency
+        if (rucioDID.rfind("/") < rucioDID.rfind(":") && rucioDID.rfind(":") != string::npos)
         {
-           scope = rucioDID.substr(1, rucioDID.find(":") -1);
+           slashScope = rucioDID.substr(1, rucioDID.find(":") -1);
+           scope = slashScope;
+
+           while (slashScope.find(".") != string::npos)
+               slashScope.replace(slashScope.find("."), 1, "/");
            while (scope.find("/") != string::npos)
                scope.replace(scope.find("/"), 1, ".");
 
@@ -117,7 +123,7 @@ int XrdOucName2NameInvRucio::pfn2lfn(const char* pfn, char* buff, int blen)
                sprintf(&md5string[i*2], "%02x", (unsigned int)md5digest[i]);
            md5string[MD5_DIGEST_LENGTH*2+1] = '\0';
            tmp = md5string;
-           rucioDID = "/" + scope + "/" + tmp.substr(0, 2) + "/" + tmp.substr(2, 2) + "/" + file;
+           rucioDID = "/" + slashScope + "/" + tmp.substr(0, 2) + "/" + tmp.substr(2, 2) + "/" + file;
         }
         
         cachePath = cacheDir + "/atlas/rucio" + rucioDID;
