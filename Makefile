@@ -16,7 +16,7 @@ OBJECTS=XrdOucName2NamePfn2RucioLfn.o
 DEBUG=-g
 
 XrdOucName2NamePfn2RucioLfn.so: $(OBJECTS) Makefile
-	g++ ${DEBUG} -shared -fPIC -o $@ $(OBJECTS) -ldl 
+	g++ ${DEBUG} -shared -fPIC -o $@ $(OBJECTS) -ldl -lssl
 
 XrdOucName2NamePfn2RucioLfn.o: XrdOucName2NamePfn2RucioLfn.cc ${HEADERS} Makefile
 	g++ ${DEBUG} ${FLAGS} -fPIC -I ${XRD_INC} -I ${XRD_LIB} -c -o $@ $<

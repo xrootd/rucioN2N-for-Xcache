@@ -1,6 +1,8 @@
 using namespace std;
 
+#include <stdio.h>
 #include <string>
+#include <openssl/md5.h>
 #include "XrdVersion.hh"
 XrdVERSIONINFO(XrdOucgetName2Name, "Inv-RUCIO-N2N");
 
@@ -72,14 +74,20 @@ int XrdOucName2NameInvRucio::pfn2lfn(const char* pfn, char* buff, int blen)
 // rucioDID isn't quite ruico DID (scrope:file), rucioDID = scrope/XX/XX/file
 
     std::string myPfn, rucioDID, cachePath;
+    std::string scope, file, tmp;
     std::size_t i;
+    std::string::iterator it;
+    MD5_CTX c;
+    unsigned char md5digest[MD5_DIGEST_LENGTH];
+    char md5string[MD5_DIGEST_LENGTH*2+1];
 
     myPfn = pfn;
     i = myPfn.rfind("rucio");
-// if pfn doesn't have "rucio", then rucioDID = pfn
-//     buff = <cacheDir>/pfn
-// if pfn does have "rucio", rucioDID will point to the string after the last "rucio", including the leading "/"
-//     buff = <cacheDir>/atlas/rucio<rucioDID>
+    // if pfn doesn't have "rucio", then rucioDID = pfn
+    //     buff = <cacheDir>/pfn
+    // if pfn does have "rucio", rucioDID will point to the string after the last 
+    // "rucio", including the leading "/"
+    //     buff = <cacheDir>/atlas/rucio<rucioDID>
     if (i == string::npos)
     {
         rucioDID = pfn;
@@ -87,7 +95,31 @@ int XrdOucName2NameInvRucio::pfn2lfn(const char* pfn, char* buff, int blen)
     }
     else
     {
-        rucioDID = myPfn.substr(i + 5, myPfn.length() -i -5);
+        rucioDID = myPfn.substr(i + 5, myPfn.length() -i -5);  // with a leading "/"
+
+        // Check if this is a FAX gLFN without the leading "/atlas/rucio". 
+        // The gLFN format is /atlas/rucio/scope:file. 
+        // In gLFN "scope" can contain "/". In RUCIO the "/" should be converted to "."
+        // Also in RUCIO "file" can't have "/", and "scope" and "file" can't have ":".
+        if (rucioDID.rfind("/") < rucioDID.rfind(":"))
+        {
+           scope = rucioDID.substr(1, rucioDID.find(":") -1);
+           while (scope.find("/") != string::npos)
+               scope.replace(scope.find("/"), 1, ".");
+
+           file = rucioDID.substr(rucioDID.find(":")+1, string::npos);
+
+           MD5_Init(&c);
+           rucioDID = scope + ":" + file;
+           MD5_Update(&c, rucioDID.c_str(), rucioDID.length());
+           MD5_Final(md5digest, &c);
+           for(i = 0; i < MD5_DIGEST_LENGTH; ++i)
+               sprintf(&md5string[i*2], "%02x", (unsigned int)md5digest[i]);
+           md5string[MD5_DIGEST_LENGTH*2+1] = '\0';
+           tmp = md5string;
+           rucioDID = "/" + scope + "/" + tmp.substr(0, 2) + "/" + tmp.substr(2, 2) + "/" + file;
+        }
+        
         cachePath = cacheDir + "/atlas/rucio" + rucioDID;
     }
     blen = cachePath.length();
@@ -101,14 +133,10 @@ XrdOucName2Name *XrdOucgetName2Name(XrdOucgetName2NameArgs)
 {
     static XrdOucName2NameInvRucio *inst = NULL;
 
-    if (inst) {
-        return (XrdOucName2Name *)inst;
-    }
+    if (inst) return (XrdOucName2Name *)inst;
 
     inst = new XrdOucName2NameInvRucio(eDest, parms);
-    if (!inst) {
-        return NULL;
-    }
+    if (!inst) return NULL;
 
     return (XrdOucName2Name *)inst;
 }
