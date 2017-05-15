@@ -35,6 +35,7 @@ XrdOucName2NameInvRucio::XrdOucName2NameInvRucio(XrdSysError* erp, const char* p
     int x;
 
     myName = "XrdOucN2N-InvRucio";
+    cacheDir = "";
     eDest = erp;
 
     x = 0;
