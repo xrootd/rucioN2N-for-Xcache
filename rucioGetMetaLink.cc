@@ -31,7 +31,7 @@ struct rucioMetaLink
 
 std::string localMetaLinkRootDir;
 
-void rucioGetMetaLinkInit(std::string dir) 
+void rucioGetMetaLinkInit(const std::string dir) 
 {
      localMetaLinkRootDir = dir;
      curl_global_init(CURL_GLOBAL_ALL);
@@ -49,10 +49,76 @@ static size_t rucioGetMetaLinkCallback(void *contents, size_t size, size_t nmemb
     return realsize;
 }
 
-// return "" if we can't find a metalink for it.
-std::string getMetaLink(std::string rucioDID)
+int mkdir_p(const std::string dir)
 {
-    std::string scope, slashScope, file, metaLinkDir, metaLinkFile, rucioMetaLinkURL;
+    std::string dirs, tmp = "/";
+    std::string::iterator it;
+    struct stat statBuf;
+    int rc;
+
+    dirs = dir;
+    for (it=dirs.begin(); it!=dirs.end(); ++it)
+    {
+        if ( *it != '/')
+            tmp += *it;
+        else
+        {
+            if (! (stat(tmp.c_str(), &statBuf) == 0 && S_ISDIR(statBuf.st_mode)))
+            {
+                rc = mkdir(tmp.c_str(), 0755);
+                if (rc && errno != EEXIST) return rc;
+            }
+            tmp += "/";
+        }
+    }
+    rc = mkdir(tmp.c_str(), 0755);
+    if (rc && errno != EEXIST) return rc;
+    errno = 0;
+    return 0;
+}
+
+std::string makeMetaLink(const std::string pfn)
+{
+    std::string metaLinkDir, metaLinkFile, myPfn, tmp;
+    size_t i;
+
+    // "repair" pfn, from "/root:/atlrdr1:11094/xrootd" to "root://atlrdr1:11094//xrootd"
+    myPfn = pfn;
+    myPfn.replace(0, 7, "");
+    myPfn.replace(myPfn.find("/"), 1, "//");
+    myPfn = "root://" + myPfn;
+
+    metaLinkFile = myPfn;
+    if (metaLinkFile.find("root://") == 0)
+    {
+        metaLinkFile = metaLinkFile.replace(0, 7, "");   // remote "root://"
+        metaLinkFile = metaLinkFile.replace(0, metaLinkFile.find("/")+2, "");  // remote loginid@hostnaem:port//
+    }
+    metaLinkFile = localMetaLinkRootDir + "/" + metaLinkFile + ".meta4";
+    metaLinkDir = metaLinkFile;
+    i = metaLinkDir.rfind("/");
+    metaLinkDir.replace(i, metaLinkDir.length() - i+1, "");
+    if (mkdir_p(metaLinkDir)) return "";
+
+    FILE *fd = fopen(metaLinkFile.c_str(), "w");
+    if (fd == NULL) return "";
+    tmp  = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
+    tmp += "<metalink xmlns=\"urn:ietf:params:xml:ns:metalink\">\n";
+    tmp += "  <file name=\"x\">\n";
+    tmp += "    <url location=\"LOCAL\" priority=\"1\">" + myPfn + "</url>\n";
+    tmp += "  </file>\n";
+    tmp += "</metalink>";
+
+    fprintf(fd, "%s", tmp.c_str());
+    fclose(fd);
+
+    return metaLinkFile; 
+}
+
+// return "" if we can't find a metalink for it.
+std::string getMetaLink(const std::string DID)
+{
+    std::string rucioDID, scope, slashScope, file, metaLinkDir, metaLinkFile, rucioMetaLinkURL;
     std::string tmp;
     std::string::iterator it;
     size_t i;
@@ -64,6 +130,7 @@ std::string getMetaLink(std::string rucioDID)
 
     if (localMetaLinkRootDir == "") return "";
 
+    rucioDID = DID;
     slashScope = rucioDID.substr(1, rucioDID.find(":") -1);
     scope = slashScope;
 
@@ -86,21 +153,7 @@ std::string getMetaLink(std::string rucioDID)
     
     metaLinkDir = localMetaLinkRootDir + "/atlas/rucio/" + slashScope + "/" + tmp.substr(0, 2) + "/" + tmp.substr(2, 2);
 
-    tmp = "/";
-    for (it=metaLinkDir.begin(); it!=metaLinkDir.end(); ++it)
-    {
-        if ( *it != '/')
-            tmp += *it;
-        else
-        {
-            if (! (stat(tmp.c_str(), &statBuf) == 0 && S_ISDIR(statBuf.st_mode)))
-            {
-                if (mkdir(tmp.c_str(), 0755) && errno != EEXIST) return "";
-            }
-            tmp += "/";
-        }
-    }
-    if (mkdir(tmp.c_str(), 0755) && errno != EEXIST) return "";
+    if (mkdir_p(metaLinkDir)) return "";
 
     metaLinkFile = metaLinkDir + "/" + file + ".meta4";
     time_t t_now = time(NULL);
@@ -142,6 +195,7 @@ std::string getMetaLink(std::string rucioDID)
     if (fd == NULL) return "";
     fprintf(fd, "%s", chunk.data);
     fclose(fd);
+    free(chunk.data);
 
     return metaLinkFile;
 }

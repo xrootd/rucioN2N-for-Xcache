@@ -78,7 +78,7 @@ XrdOucName2NameInvRucio::XrdOucName2NameInvRucio(XrdSysError* erp, const char* p
 
 int XrdOucName2NameInvRucio::lfn2pfn(const char* lfn, char* buff, int blen)
 {
-    std::string myLfn, rucioDID;
+    std::string myLfn, myPfn, rucioDID;
     std::string scope, slashScope, file;
     std::size_t i;
     MD5_CTX c;
@@ -90,10 +90,10 @@ int XrdOucName2NameInvRucio::lfn2pfn(const char* lfn, char* buff, int blen)
 // see comments in pfn2lfn()
     if (i != string::npos)
     {
-        rucioDID = myLfn.substr(i + 5, myLfn.length() -i -5);
+        rucioDID = myLfn.substr(i + 5, myLfn.length() -i -5); // with a leading "/"
         if (rucioDID.rfind("/") < rucioDID.rfind(":") && rucioDID.rfind(":") != string::npos)
         {
-            std::string myPfn = getMetaLink(rucioDID);
+            myPfn = getMetaLink(rucioDID);
             if (myPfn != "") 
             {
                 blen = myPfn.length();
@@ -103,13 +103,15 @@ int XrdOucName2NameInvRucio::lfn2pfn(const char* lfn, char* buff, int blen)
             }
         }
     }
-    else 
+
+    myPfn = makeMetaLink(lfn); 
+    if (myPfn != "")
     {
-        blen = strlen(lfn);
-        strncpy(buff, lfn, blen);
-        buff[blen] = '\0';
-        return 0;
+        blen = myPfn.length();
+        strncpy(buff, myPfn.c_str(), blen);
+        buff[blen] = 0;
     }    
+    return 0;
 }
 
 int XrdOucName2NameInvRucio::lfn2rfn(const char* lfn, char* buff, int blen) { return -EOPNOTSUPP; }
@@ -141,10 +143,7 @@ int XrdOucName2NameInvRucio::pfn2lfn(const char* pfn, char* buff, int blen)
     // "rucio", including the leading "/"
     //     buff = <cacheDir>/atlas/rucio<rucioDID>
     if (i == string::npos)
-    {
-        rucioDID = pfn;
-        cachePath = cacheDir + rucioDID;
-    }
+        cachePath = cacheDir + myPfn;
     else
     {
         rucioDID = myPfn.substr(i + 5, myPfn.length() -i -5);  // with a leading "/"

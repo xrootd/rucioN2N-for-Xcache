@@ -1,2 +1,3 @@
-void rucioGetMetaLinkInit(std::string dir);
-string getMetaLink(std::string rucioDID);
+void rucioGetMetaLinkInit(const std::string);
+string getMetaLink(const std::string);
+string makeMetaLink(const std::string);
