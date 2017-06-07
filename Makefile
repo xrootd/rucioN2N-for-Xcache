@@ -10,18 +10,22 @@ endif
 
 FLAGS=-D_REENTRANT -D_THREAD_SAFE -Wno-deprecated
 
-SOURCES=XrdOucName2NamePfn2RucioLfn.cc
-OBJECTS=XrdOucName2NamePfn2RucioLfn.o
+HEADERS=rucioGetMetaLink.hh
+SOURCES=XrdOucName2NamePfn2RucioLfn.cc rucioGetMetaLink.cc
+OBJECTS=XrdOucName2NamePfn2RucioLfn.o rucioGetMetaLink.o
 
 DEBUG=-g
 
 XrdOucName2NamePfn2RucioLfn.so: $(OBJECTS) Makefile
-	g++ ${DEBUG} -shared -fPIC -o $@ $(OBJECTS) -ldl -lssl
+	g++ ${DEBUG} -shared -fPIC -o $@ $(OBJECTS) -ldl -lssl -lcurl
 
 XrdOucName2NamePfn2RucioLfn.o: XrdOucName2NamePfn2RucioLfn.cc ${HEADERS} Makefile
 	g++ ${DEBUG} ${FLAGS} -fPIC -I ${XRD_INC} -I ${XRD_LIB} -c -o $@ $<
 
+rucioGetMetaLink.o: rucioGetMetaLink.cc ${HEADERS} Makefile
+	g++ ${DEBUG} ${FLAGS} -fPIC -I ${XRD_INC} -I ${XRD_LIB} -c -o $@ $<
+
 clean:
-	rm -vf XrdOucName2NamePfn2RucioLfn.{o,so}
+	rm -vf XrdOucName2NamePfn2RucioLfn.{o,so} rucioGetMetaLink.{o,so}
 
 
