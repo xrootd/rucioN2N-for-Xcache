@@ -103,9 +103,9 @@ std::string getMetaLink(std::string rucioDID)
     if (mkdir(tmp.c_str(), 0755) && errno != EEXIST) return "";
 
     metaLinkFile = metaLinkDir + "/" + file + ".meta4";
-    time_t t_now;
+    time_t t_now = time(NULL);
     if (stat(metaLinkFile.c_str(), &statBuf) == 0 && 
-       (t_now - statBuf.st_mtime) < 3600*24) 
+       (t_now - statBuf.st_mtim.tv_sec) < 3600*24) 
     {
         return metaLinkFile;
     }
