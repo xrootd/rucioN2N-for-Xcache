@@ -23,6 +23,8 @@ using namespace std;
 std::string rucioServerUrl = "https://rucio-lb-prod.cern.ch/redirect/";
 std::string rucioServerCgi = "/metalink?schemes=root&select=geoip";
 
+#define MetaLinkLifetime 3600*24
+
 struct rucioMetaLink
 {
     char *data;
@@ -107,7 +109,7 @@ std::string makeMetaLink(const std::string pfn)
     tmp += "  <file name=\"x\">\n";
     tmp += "    <url location=\"LOCAL\" priority=\"1\">" + myPfn + "</url>\n";
     tmp += "  </file>\n";
-    tmp += "</metalink>";
+    tmp += "</metalink>\n";
 
     fprintf(fd, "%s", tmp.c_str());
     fclose(fd);
@@ -158,7 +160,7 @@ std::string getMetaLink(const std::string DID)
     metaLinkFile = metaLinkDir + "/" + file + ".meta4";
     time_t t_now = time(NULL);
     if (stat(metaLinkFile.c_str(), &statBuf) == 0 && 
-       (t_now - statBuf.st_mtim.tv_sec) < 3600*24) 
+       (t_now - statBuf.st_mtim.tv_sec) < MetaLinkLifetime) 
     {
         return metaLinkFile;
     }

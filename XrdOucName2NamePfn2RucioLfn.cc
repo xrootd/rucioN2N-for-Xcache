@@ -38,7 +38,7 @@ XrdOucName2NameInvRucio::XrdOucName2NameInvRucio(XrdSysError* erp, const char* p
     myName = "XrdOucN2N-InvRucio";
     cacheDir = "";
     eDest = erp;
-    localMetaLinkRootDir = "/dev/shm";
+    localMetaLinkRootDir = "/dev/shm/atlas";
 
     x = 0;
     key = "";
