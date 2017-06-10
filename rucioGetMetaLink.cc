@@ -107,7 +107,7 @@ std::string makeMetaLink(const std::string pfn)
     tmp  = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
     tmp += "<metalink xmlns=\"urn:ietf:params:xml:ns:metalink\">\n";
     tmp += "  <file name=\"x\">\n";
-    tmp += "    <url location=\"LOCAL\" priority=\"1\">" + myPfn + "</url>\n";
+    tmp += "    <url location=\"REMOTE\" priority=\"1\">" + myPfn + "</url>\n";
     tmp += "  </file>\n";
     tmp += "</metalink>\n";
 
@@ -167,7 +167,7 @@ std::string getMetaLink(const std::string DID)
      
     rucioMetaLinkURL = rucioServerUrl + scope + "/" + file + rucioServerCgi;
 
-    tmp = "wget -q --no-check-certificate -O " + metaLinkFile + " '" + rucioMetaLinkURL + "'";
+    tmp = "curl -s -k -o " + metaLinkFile + " '" + rucioMetaLinkURL + "'";
     if (system(tmp.c_str()) == 0)
         return metaLinkFile;
     else
