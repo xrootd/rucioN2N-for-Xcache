@@ -36,7 +36,7 @@ std::string localMetaLinkRootDir;
 void rucioGetMetaLinkInit(const std::string dir) 
 {
      localMetaLinkRootDir = dir;
-     curl_global_init(CURL_GLOBAL_ALL);
+//     curl_global_init(CURL_GLOBAL_ALL);
 }
 
 static size_t rucioGetMetaLinkCallback(void *contents, size_t size, size_t nmemb, void *userp)
@@ -167,6 +167,14 @@ std::string getMetaLink(const std::string DID)
      
     rucioMetaLinkURL = rucioServerUrl + scope + "/" + file + rucioServerCgi;
 
+    tmp = "wget -q --no-check-certificate -O " + metaLinkFile + " '" + rucioMetaLinkURL + "'";
+    if (system(tmp.c_str()) == 0)
+        return metaLinkFile;
+    else
+        return "" ;
+
+/*  libcurl is not thread safe in RHEL6 !
+ *
     struct rucioMetaLink chunk;
 
     chunk.data = (char*)malloc(1);  // will be grown as needed by the realloc above 
@@ -200,4 +208,5 @@ std::string getMetaLink(const std::string DID)
     free(chunk.data);
 
     return metaLinkFile;
+*/
 }
