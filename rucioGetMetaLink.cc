@@ -167,11 +167,16 @@ std::string getMetaLink(const std::string DID)
      
     rucioMetaLinkURL = rucioServerUrl + scope + "/" + file + rucioServerCgi;
 
-    tmp = "curl -s -k -o " + metaLinkFile + " '" + rucioMetaLinkURL + "'";
-    if (system(tmp.c_str()) == 0)
-        return metaLinkFile;
-    else
-        return "" ;
+    // -f prevent an output to be created if DID doesn't exist
+    tmp = "curl -s -k -f -o " + metaLinkFile + " '" + rucioMetaLinkURL + "'" + " 2>/dev/null";
+    system(tmp.c_str());
+    return metaLinkFile;
+
+//    tmp = "curl -s -k -o " + metaLinkFile + " '" + rucioMetaLinkURL + "'";
+//    if (system(tmp.c_str()) == 0)
+//        return metaLinkFile;
+//    else
+//        return "" ;
 
 /*  libcurl is not thread safe in RHEL6 !
  *
