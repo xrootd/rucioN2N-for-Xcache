@@ -79,6 +79,8 @@ int mkdir_p(const std::string dir)
     return 0;
 }
 
+// Both makeMetaLink() and getMetaLink() should return metaLinkFile even if we can't create or download 
+// a metalink. A file-not-found error will eventually be gerenated.
 std::string makeMetaLink(const std::string pfn)
 {
     std::string metaLinkDir, metaLinkFile, myPfn, tmp;
@@ -100,24 +102,24 @@ std::string makeMetaLink(const std::string pfn)
     metaLinkDir = metaLinkFile;
     i = metaLinkDir.rfind("/");
     metaLinkDir.replace(i, metaLinkDir.length() - i+1, "");
-    if (mkdir_p(metaLinkDir)) return "";
+    if (mkdir_p(metaLinkDir)) return metaLinkFile;
 
     FILE *fd = fopen(metaLinkFile.c_str(), "w");
-    if (fd == NULL) return "";
-    tmp  = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
-    tmp += "<metalink xmlns=\"urn:ietf:params:xml:ns:metalink\">\n";
-    tmp += "  <file name=\"x\">\n";
-    tmp += "    <url location=\"REMOTE\" priority=\"1\">" + myPfn + "</url>\n";
-    tmp += "  </file>\n";
-    tmp += "</metalink>\n";
+    if (fd != NULL) 
+    {
+        tmp  = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
+        tmp += "<metalink xmlns=\"urn:ietf:params:xml:ns:metalink\">\n";
+        tmp += "  <file name=\"x\">\n";
+        tmp += "    <url location=\"REMOTE\" priority=\"1\">" + myPfn + "</url>\n";
+        tmp += "  </file>\n";
+        tmp += "</metalink>\n";
 
-    fprintf(fd, "%s", tmp.c_str());
-    fclose(fd);
-
+        fprintf(fd, "%s", tmp.c_str());
+        fclose(fd);
+    }
     return metaLinkFile; 
 }
 
-// return "" if we can't find a metalink for it.
 std::string getMetaLink(const std::string DID)
 {
     std::string rucioDID, scope, slashScope, file, metaLinkDir, metaLinkFile, rucioMetaLinkURL;
@@ -153,14 +155,15 @@ std::string getMetaLink(const std::string DID)
     md5string[MD5_DIGEST_LENGTH*2+1] = '\0';
     tmp = md5string;
     
-    metaLinkDir = localMetaLinkRootDir + "/atlas/rucio/" + slashScope + "/" + tmp.substr(0, 2) + "/" + tmp.substr(2, 2);
-
-    if (mkdir_p(metaLinkDir)) return "";
-
+    metaLinkDir = localMetaLinkRootDir + "/atlas/rucio/" + slashScope + "/" 
+                + tmp.substr(0, 2) + "/" + tmp.substr(2, 2);
     metaLinkFile = metaLinkDir + "/" + file + ".meta4";
+
+    if (mkdir_p(metaLinkDir)) return metaLinkFile;
+
     time_t t_now = time(NULL);
     if (stat(metaLinkFile.c_str(), &statBuf) == 0 && 
-       (t_now - statBuf.st_mtim.tv_sec) < MetaLinkLifetime) 
+        (t_now - statBuf.st_mtim.tv_sec) < MetaLinkLifetime) 
     {
         return metaLinkFile;
     }
@@ -168,18 +171,10 @@ std::string getMetaLink(const std::string DID)
     rucioMetaLinkURL = rucioServerUrl + scope + "/" + file + rucioServerCgi;
 
     // -f prevent an output to be created if DID doesn't exist
-    tmp = "curl -s -k -f -o " + metaLinkFile + " '" + rucioMetaLinkURL + "'" + " 2>/dev/null";
-    system(tmp.c_str());
-    return metaLinkFile;
+//    tmp = "curl -s -k -f -o " + metaLinkFile + " '" + rucioMetaLinkURL + "'" + " 2>/dev/null";
+//    system(tmp.c_str());
+//    return metaLinkFile;
 
-//    tmp = "curl -s -k -o " + metaLinkFile + " '" + rucioMetaLinkURL + "'";
-//    if (system(tmp.c_str()) == 0)
-//        return metaLinkFile;
-//    else
-//        return "" ;
-
-/*  libcurl is not thread safe in RHEL6 !
- *
     struct rucioMetaLink chunk;
 
     chunk.data = (char*)malloc(1);  // will be grown as needed by the realloc above 
@@ -187,8 +182,8 @@ std::string getMetaLink(const std::string DID)
    
     CURL *curl_handle;
     CURLcode res;
-    // curl_global_init(CURL_GLOBAL_ALL);
     curl_handle = curl_easy_init();
+    curl_easy_setopt(curl_handle, CURLOPT_NOSIGNAL, 1); // to make it thread-safe?
     curl_easy_setopt(curl_handle, CURLOPT_URL, rucioMetaLinkURL.c_str());
     curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 0);  // the curl -k option
     curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, rucioGetMetaLinkCallback);
@@ -200,18 +195,18 @@ std::string getMetaLink(const std::string DID)
     // field, so we provide one 
     curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "libcurl-agent/1.0");
     res = curl_easy_perform(curl_handle);
+    curl_easy_cleanup(curl_handle);
    
     // check for errors
-    if(res != CURLE_OK) return "";
-    curl_easy_cleanup(curl_handle);
-    // curl_global_cleanup();
-
-    FILE *fd = fopen(metaLinkFile.c_str(), "w");
-    if (fd == NULL) return "";
-    fprintf(fd, "%s", chunk.data);
-    fclose(fd);
+    if(res == CURLE_OK)
+    {
+        FILE *fd = fopen(metaLinkFile.c_str(), "w");
+        if (fd != NULL) 
+        {
+            fprintf(fd, "%s", chunk.data);
+            fclose(fd);
+        }
+    }
     free(chunk.data);
-
     return metaLinkFile;
-*/
 }
