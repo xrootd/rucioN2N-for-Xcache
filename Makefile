@@ -8,7 +8,7 @@ ifeq ($(strip $(XRD_LIB)),)
 XRD_LIB=/usr/lib64
 endif
 
-FLAGS=-D_REENTRANT -D_THREAD_SAFE -Wno-deprecated
+FLAGS=-D_REENTRANT -D_THREAD_SAFE -Wno-deprecated -std=c++0x 
 
 HEADERS=rucioGetMetaLink.hh
 SOURCES=XrdOucName2NamePfn2RucioLfn.cc rucioGetMetaLink.cc

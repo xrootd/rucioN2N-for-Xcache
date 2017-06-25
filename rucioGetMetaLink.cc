@@ -2,7 +2,6 @@ using namespace std;
 
 #include <fcntl.h>
 #include <curl/curl.h>
-#include <string>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -11,6 +10,8 @@ using namespace std;
 #include <stdlib.h>
 #include <errno.h>
 #include <openssl/md5.h>
+#include <string>
+#include <thread>
 
 /* 
  * From Vincent / Mario:
@@ -23,7 +24,8 @@ using namespace std;
 std::string rucioServerUrl = "https://rucio-lb-prod.cern.ch/redirect/";
 std::string rucioServerCgi = "/metalink?schemes=root&select=geoip";
 
-#define MetaLinkLifetime 3600*24
+#define MetaLinkLifeTmin 1440 
+#define MetaLinkLifeTsec MetaLinkLifeTmin*60
 
 struct rucioMetaLink
 {
@@ -33,10 +35,26 @@ struct rucioMetaLink
 
 std::string localMetaLinkRootDir;
 
+void cleaner()
+{
+    std::string cmd;
+    cmd = "find " + localMetaLinkRootDir + " -type f -amin +" 
+        + std::to_string((long long int)MetaLinkLifeTmin) + " -exec rm {} \\; > /dev/null 2>&1; "
+        + "find " + localMetaLinkRootDir + " -type d -empty -mmin +" 
+        + std::to_string((long long int)MetaLinkLifeTmin) + " -exec rmdir {} \\; > /dev/null 2>&1";
+    while (! sleep(600))
+    {
+        system(cmd.c_str());
+    }
+}
+
 void rucioGetMetaLinkInit(const std::string dir) 
 {
      localMetaLinkRootDir = dir;
-//     curl_global_init(CURL_GLOBAL_ALL);
+
+     std::thread cleanning(cleaner);
+     cleanning.detach();
+     curl_global_init(CURL_GLOBAL_ALL);
 }
 
 static size_t rucioGetMetaLinkCallback(void *contents, size_t size, size_t nmemb, void *userp)
@@ -159,15 +177,15 @@ std::string getMetaLink(const std::string DID)
                 + tmp.substr(0, 2) + "/" + tmp.substr(2, 2);
     metaLinkFile = metaLinkDir + "/" + file + ".meta4";
 
-    if (mkdir_p(metaLinkDir)) return metaLinkFile;
-
     time_t t_now = time(NULL);
     if (stat(metaLinkFile.c_str(), &statBuf) == 0 && 
-        (t_now - statBuf.st_mtim.tv_sec) < MetaLinkLifetime) 
+        (t_now - statBuf.st_mtim.tv_sec) < MetaLinkLifeTsec) 
     {
         return metaLinkFile;
     }
      
+    if (mkdir_p(metaLinkDir)) return metaLinkFile;
+
     rucioMetaLinkURL = rucioServerUrl + scope + "/" + file + rucioServerCgi;
 
     // -f prevent an output to be created if DID doesn't exist
