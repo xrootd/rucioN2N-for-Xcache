@@ -5,14 +5,14 @@ ifeq ($(strip $(XRD_INC)),)
 endif
 
 ifeq ($(strip $(XRD_LIB)),)
-XRD_LIB=/usr/lib64
+    XRD_LIB=/usr/lib64
 endif
 
 FLAGS=-D_REENTRANT -D_THREAD_SAFE -Wno-deprecated -std=c++0x 
 
-HEADERS=rucioGetMetaLink.hh
-SOURCES=XrdOucName2NameDCP4RUCIO.cc rucioGetMetaLink.cc
-OBJECTS=XrdOucName2NameDCP4RUCIO.o rucioGetMetaLink.o
+HEADERS=rucioGetMetaLink.hh pfn2cache.hh
+SOURCES=XrdOucName2NameDCP4RUCIO.cc rucioGetMetaLink.cc pfn2cache.cc
+OBJECTS=XrdOucName2NameDCP4RUCIO.o rucioGetMetaLink.o pfn2cache.o
 
 DEBUG=-g
 
@@ -23,6 +23,9 @@ XrdOucName2NameDCP4RUCIO.o: XrdOucName2NameDCP4RUCIO.cc ${HEADERS} Makefile
 	g++ ${DEBUG} ${FLAGS} -fPIC -I ${XRD_INC} -I ${XRD_LIB} -c -o $@ $<
 
 rucioGetMetaLink.o: rucioGetMetaLink.cc ${HEADERS} Makefile
+	g++ ${DEBUG} ${FLAGS} -fPIC -I ${XRD_INC} -I ${XRD_LIB} -c -o $@ $<
+
+pfn2cache.o: pfn2cache.cc ${HEADERS} Makefile
 	g++ ${DEBUG} ${FLAGS} -fPIC -I ${XRD_INC} -I ${XRD_LIB} -c -o $@ $<
 
 clean:
