@@ -29,7 +29,7 @@ public:
 
     friend XrdOucName2Name *XrdOucgetName2Name(XrdOucgetName2NameArgs);
 private:
-    string myName, cacheDir, localMetaLinkRootDir;
+    string myName, localMetaLinkRootDir;
     XrdSysError *eDest;
     bool isCmsd;
 };
@@ -43,7 +43,6 @@ XrdOucName2NameDiskCacheProxy4Rucio::XrdOucName2NameDiskCacheProxy4Rucio(XrdSysE
     int x;
 
     myName = "XrdOucN2N-InvRucio";
-    cacheDir = "";
     eDest = erp;
     localMetaLinkRootDir = "/dev/shm/atlas";
     
@@ -65,13 +64,7 @@ XrdOucName2NameDiskCacheProxy4Rucio::XrdOucName2NameDiskCacheProxy4Rucio(XrdSysE
         if (*it == '=') x = 1;
         else if (*it == ' ') 
         { 
-            if (key == "cachedir") 
-            {
-                cacheDir = value;
-                message = myName + " Init : cacheDir = " + cacheDir;
-                eDest->Say(message.c_str());
-            }
-            else if (key == "metalinkdir")
+            if (key == "metalinkdir")
             {
                 localMetaLinkRootDir = value;
                 message = myName + " Init : metalinkdir = " + localMetaLinkRootDir;
@@ -140,7 +133,7 @@ int XrdOucName2NameDiskCacheProxy4Rucio::pfn2lfn(const char* pfn, char* buff, in
 {
     std::string cachePath;
 
-    cachePath = pfn2cache(cacheDir, localMetaLinkRootDir, pfn);
+    cachePath = pfn2cache(localMetaLinkRootDir, pfn);
     blen = cachePath.length();
     strncpy(buff, cachePath.c_str(), blen);
     buff[blen] = '\0';

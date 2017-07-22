@@ -8,7 +8,7 @@ using namespace std;
 #include <string>
 #include <openssl/md5.h>
 
-std::string pfn2cache(const std::string cacheDir, const std::string localMetaLinkRootDir, const char* pfn) 
+std::string pfn2cache(const std::string localMetaLinkRootDir, const char* pfn) 
 {
 // rucioDID isn't quite ruico DID (scrope:file), rucioDID = scrope/XX/XX/file
 
@@ -31,12 +31,12 @@ std::string pfn2cache(const std::string cacheDir, const std::string localMetaLin
 
     i = myPfn.rfind("rucio");
     // if pfn doesn't have "rucio", then rucioDID = pfn
-    //     buff = <cacheDir>/pfn
+    //     buff = pfn
     // if pfn does have "rucio", rucioDID will point to the string after the last 
     // "rucio", including the leading "/"
-    //     buff = <cacheDir>/atlas/rucio<rucioDID>
+    //     buff = /atlas/rucio<rucioDID>
     if (i == string::npos)
-        cachePath = cacheDir + myPfn;
+        cachePath = myPfn;
     else
     {
         rucioDID = myPfn.substr(i + 5, myPfn.length() -i -5);  // with a leading "/"
@@ -71,7 +71,7 @@ std::string pfn2cache(const std::string cacheDir, const std::string localMetaLin
             rucioDID = "/" + slashScope + "/" + tmp.substr(0, 2) + "/" + tmp.substr(2, 2) + "/" + file;
         }
         
-        cachePath = cacheDir + "/atlas/rucio" + rucioDID;
+        cachePath = "/atlas/rucio" + rucioDID;
     }
     return cachePath;
 }
