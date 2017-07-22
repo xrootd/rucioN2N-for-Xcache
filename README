@@ -1,7 +1,9 @@
 Author: Wei Yang   SLAC National Accelerator Laboratory / Stanford University
 
-xrootd-N2N-rucio-pfn2glfn requires Xrootd release 4.7 and higher
+xrootd-N2N-DCP-for-RUCIO requires Xrootd release 4.7 and higher
 
-This is a Xrootd (seach Github for xrootd) Ouc Name2Name plugin module to effeciently cache LHC ATLAS data files managed by the experiment's Distrubite Data Management (DDM) system (RUCIO). In RUCIO, multiply copies of one such file may be storaged in various locations. The file paths all end with .../scope/XX/XX/file.  
+This is a Xrootd (seach Github for xrootd) Ouc Name2Name plugin module to effeciently cache LHC ATLAS data files managed by the experiment's Distrubite Data Management (DDM) system (RUCIO). 
 
-Based on the above design (in RUCIO), The plugin module will help determine identical files distributed at different locations to improve Xrootd cache (memory cache or proxy storage cache) efficiency. 
+In RUCIO, multiply copies of one such file may be storaged in various locations. The file paths all end with .../scope/XX/XX/file. The plugin module will help determine identical files distributed at different locations to improve Xrootd cache (memory cache or proxy storage cache) efficiency. 
+
+When accessed via the ATLAS global Logical File Name (gLFN, which is equavalent to RUCIO DID), this plug-in will utilize the RUCIO's metalink capability to fetch the data from an optimal source.
