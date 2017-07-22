@@ -1,5 +1,8 @@
 all: XrdName2NameDCP4RUCIO.so
 
+# make sure xrootd-devel, xrootd-server-devel and xrootd-client-devel rpms are installed for
+# the needed xrootd header files.
+
 ifeq ($(strip $(XRD_INC)),)
     XRD_INC=/usr/include/xrootd
 endif
