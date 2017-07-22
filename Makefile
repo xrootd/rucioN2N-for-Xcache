@@ -1,4 +1,4 @@
-all: XrdOucName2NameDCP4RUCIO.so
+all: XrdName2NameDCP4RUCIO.so
 
 ifeq ($(strip $(XRD_INC)),)
     XRD_INC=/usr/include/xrootd
@@ -16,7 +16,7 @@ OBJECTS=XrdOucName2NameDCP4RUCIO.o XrdOssStatInfoDCP.o rucioGetMetaLink.o pfn2ca
 
 DEBUG=-g
 
-XrdOucName2NameDCP4RUCIO.so: $(OBJECTS) Makefile
+XrdName2NameDCP4RUCIO.so: $(OBJECTS) Makefile
 	g++ ${DEBUG} -shared -fPIC -o $@ $(OBJECTS) -ldl -lssl -lcurl
 
 XrdOucName2NameDCP4RUCIO.o: XrdOucName2NameDCP4RUCIO.cc ${HEADERS} Makefile
@@ -32,6 +32,6 @@ pfn2cache.o: pfn2cache.cc ${HEADERS} Makefile
 	g++ ${DEBUG} ${FLAGS} -fPIC -I ${XRD_INC} -I ${XRD_LIB} -c -o $@ $<
 
 clean:
-	rm -vf XrdOucName2NameDCP4RUCIO.{o,so} rucioGetMetaLink.{o,so}
+	rm -vf XrdName2NameDCP4RUCIO.{o,so} rucioGetMetaLink.{o,so}
 
 
