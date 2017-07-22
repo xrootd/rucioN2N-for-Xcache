@@ -4,7 +4,7 @@ using namespace std;
 #include <string>
 #include <openssl/md5.h>
 #include "XrdVersion.hh"
-XrdVERSIONINFO(XrdOucgetName2Name, "Inv-RUCIO-N2N");
+XrdVERSIONINFO(XrdOucgetName2Name, "N2N-DCP4RUCIO");
 
 #include "rucioGetMetaLink.hh"
 #include "XrdOuc/XrdOucEnv.hh"
@@ -12,15 +12,15 @@ XrdVERSIONINFO(XrdOucgetName2Name, "Inv-RUCIO-N2N");
 #include "XrdSys/XrdSysPlatform.hh"
 #include "XrdSys/XrdSysError.hh"
 
-class XrdOucName2NameInvRucio : public XrdOucName2Name
+class XrdOucName2NameDiskCacheProxy4Rucio : public XrdOucName2Name
 {
 public:
     virtual int lfn2pfn(const char* lfn, char* buff, int blen);
     virtual int lfn2rfn(const char* lfn, char* buff, int blen);
     virtual int pfn2lfn(const char* lfn, char* buff, int blen);
 
-    XrdOucName2NameInvRucio(XrdSysError *erp, const char* parms);
-    virtual ~XrdOucName2NameInvRucio() {};
+    XrdOucName2NameDiskCacheProxy4Rucio(XrdSysError *erp, const char* parms);
+    virtual ~XrdOucName2NameDiskCacheProxy4Rucio() {};
 
     friend XrdOucName2Name *XrdOucgetName2Name(XrdOucgetName2NameArgs);
 private:
@@ -29,7 +29,7 @@ private:
     bool isCmsd;
 };
 
-XrdOucName2NameInvRucio::XrdOucName2NameInvRucio(XrdSysError* erp, const char* parms)
+XrdOucName2NameDiskCacheProxy4Rucio::XrdOucName2NameDiskCacheProxy4Rucio(XrdSysError* erp, const char* parms)
 {
     std::string myProg;
     std::string opts, message, key, value;
@@ -85,7 +85,7 @@ XrdOucName2NameInvRucio::XrdOucName2NameInvRucio(XrdSysError* erp, const char* p
     rucioGetMetaLinkInit(localMetaLinkRootDir);
 }
 
-int XrdOucName2NameInvRucio::lfn2pfn(const char* lfn, char* buff, int blen)
+int XrdOucName2NameDiskCacheProxy4Rucio::lfn2pfn(const char* lfn, char* buff, int blen)
 {
     std::string myLfn, myPfn, rucioDID;
     std::string scope, slashScope, file;
@@ -130,8 +130,8 @@ int XrdOucName2NameInvRucio::lfn2pfn(const char* lfn, char* buff, int blen)
     return 0;
 }
 
-int XrdOucName2NameInvRucio::lfn2rfn(const char* lfn, char* buff, int blen) { return -EOPNOTSUPP; }
-int XrdOucName2NameInvRucio::pfn2lfn(const char* pfn, char* buff, int blen) 
+int XrdOucName2NameDiskCacheProxy4Rucio::lfn2rfn(const char* lfn, char* buff, int blen) { return -EOPNOTSUPP; }
+int XrdOucName2NameDiskCacheProxy4Rucio::pfn2lfn(const char* pfn, char* buff, int blen) 
 {
 // rucioDID isn't quite ruico DID (scrope:file), rucioDID = scrope/XX/XX/file
 
@@ -205,11 +205,11 @@ int XrdOucName2NameInvRucio::pfn2lfn(const char* pfn, char* buff, int blen)
  
 XrdOucName2Name *XrdOucgetName2Name(XrdOucgetName2NameArgs)
 {
-    static XrdOucName2NameInvRucio *inst = NULL;
+    static XrdOucName2NameDiskCacheProxy4Rucio *inst = NULL;
 
     if (inst) return (XrdOucName2Name *)inst;
 
-    inst = new XrdOucName2NameInvRucio(eDest, parms);
+    inst = new XrdOucName2NameDiskCacheProxy4Rucio(eDest, parms);
     if (!inst) return NULL;
 
     return (XrdOucName2Name *)inst;
