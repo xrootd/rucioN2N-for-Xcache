@@ -27,12 +27,25 @@ int XrdOssStatInfo(const char *path, struct stat *buff,
 
      tmp = path;
      i = tmp.rfind("/atlas/rucio");
-     if (i == string::npos) 
-         cachePath = path;
-     else
+     if (i != string::npos) 
      {
          prefix = tmp.substr(0, i);
          cachePath = prefix + pfn2cache("", tmp.substr(i+1, tmp.length() -i).c_str());
+     }
+     else 
+     {
+         i = tmp.find("/root:/");
+         if (i != string::npos)
+         {
+             prefix = tmp.substr(0, i);
+             i = tmp.rfind("/rucio/");
+             if (i != string::npos) 
+                 cachePath = prefix + pfn2cache("", tmp.substr(i+1, tmp.length() -i).c_str());
+             else
+                 cachePath = path;
+         }
+         else
+             cachePath = path;
      }
      return (stat(cachePath.c_str(), buff)? -1 : 0);
 }
