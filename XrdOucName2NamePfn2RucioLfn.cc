@@ -26,11 +26,13 @@ public:
 private:
     string myName, cacheDir, localMetaLinkRootDir;
     XrdSysError *eDest;
+    bool isCmsd;
 };
 
 XrdOucName2NameInvRucio::XrdOucName2NameInvRucio(XrdSysError* erp, const char* parms)
 {
-    std::string opts, message, tmp, key, value;
+    std::string myProg;
+    std::string opts, message, key, value;
     std::string::iterator it;
     std::size_t i;
     int x;
@@ -39,6 +41,13 @@ XrdOucName2NameInvRucio::XrdOucName2NameInvRucio(XrdSysError* erp, const char* p
     cacheDir = "";
     eDest = erp;
     localMetaLinkRootDir = "/dev/shm/atlas";
+    
+    isCmsd = false;
+    if (getenv("XRDPROG")) 
+    {
+        myProg = getenv("XRDPROG");
+        if (myProg == "cmsd") isCmsd = true;
+    } 
 
     x = 0;
     key = "";
@@ -84,6 +93,13 @@ int XrdOucName2NameInvRucio::lfn2pfn(const char* lfn, char* buff, int blen)
     MD5_CTX c;
     unsigned char md5digest[MD5_DIGEST_LENGTH];
     char md5string[MD5_DIGEST_LENGTH*2+1];
+
+    if (isCmsd) // cmsd shouldn't do lfn2pfn()
+    {
+        blen = strlen(lfn);
+        strncpy(buff, lfn, blen);
+        return 0;
+    }
 
     myLfn = lfn;
     i = myLfn.rfind("rucio");
