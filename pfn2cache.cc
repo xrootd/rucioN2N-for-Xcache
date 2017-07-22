@@ -1,3 +1,7 @@
+/*
+ * Author: Wei Yang (SLAC National Accelerator Laboratory / Stanford University, 2017)
+ */
+
 using namespace std;
 
 #include <stdio.h>
