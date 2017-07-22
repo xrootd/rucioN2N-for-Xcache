@@ -11,7 +11,7 @@ using namespace std;
 #include <string>
 
 #include "pfn2cache.hh"
-#include "/usr/include/xrootd/XrdVersion.hh"
+#include "XrdVersion.hh"
 #include "XrdOss/XrdOss.hh"
 #include "XrdOss/XrdOssStatInfo.hh"
 #include "XrdOuc/XrdOucEnv.hh"
