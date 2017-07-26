@@ -198,37 +198,47 @@ std::string getMetaLink(const std::string DID)
 //    return metaLinkFile;
 
     struct rucioMetaLink chunk;
-
-    chunk.data = (char*)malloc(1);  // will be grown as needed by the realloc above 
-    chunk.size = 0;    // no data at this point  
-   
     CURL *curl_handle;
     CURLcode res;
-    curl_handle = curl_easy_init();
-    curl_easy_setopt(curl_handle, CURLOPT_NOSIGNAL, 1); // to make it thread-safe?
-    curl_easy_setopt(curl_handle, CURLOPT_URL, rucioMetaLinkURL.c_str());
-    curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 0);  // the curl -k option
-    curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, rucioGetMetaLinkCallback);
-    curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *)&chunk);
-    curl_easy_setopt(curl_handle, CURLOPT_FOLLOWLOCATION, 1L);
-    curl_easy_setopt(curl_handle, CURLOPT_TIMEOUT, 60L);
-   
-    // some servers don't like requests that are made without a user-agent
-    // field, so we provide one 
-    curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "libcurl-agent/1.0");
-    res = curl_easy_perform(curl_handle);
-    curl_easy_cleanup(curl_handle);
-   
-    // check for errors
-    if(res == CURLE_OK)
+
+    for (int ii = 0; ii<2; ii++)
     {
-        FILE *fd = fopen(metaLinkFile.c_str(), "w");
-        if (fd != NULL) 
+        chunk.data = (char*)malloc(1);  // will be grown as needed by the realloc above 
+        chunk.size = 0;    // no data at this point  
+       
+        curl_handle = curl_easy_init();
+        curl_easy_setopt(curl_handle, CURLOPT_NOSIGNAL, 1); // to make it thread-safe?
+        curl_easy_setopt(curl_handle, CURLOPT_URL, rucioMetaLinkURL.c_str());
+        curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 0);  // the curl -k option
+        curl_easy_setopt(curl_handle, CURLOPT_HEADER, 1);  // http header
+        curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, rucioGetMetaLinkCallback);
+        curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *)&chunk);
+        curl_easy_setopt(curl_handle, CURLOPT_FOLLOWLOCATION, 1L);
+        curl_easy_setopt(curl_handle, CURLOPT_TIMEOUT, 60L);
+       
+        // some servers don't like requests that are made without a user-agent
+        // field, so we provide one 
+        curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "libcurl-agent/1.0");
+        res = curl_easy_perform(curl_handle);
+        curl_easy_cleanup(curl_handle);
+       
+        // check for errors
+        if(res == CURLE_OK)
         {
-            fprintf(fd, "%s", chunk.data);
-            fclose(fd);
+            if (! strncmp(chunk.data, "HTTP/1.1 200 OK", 15))
+            {
+                FILE *fd = fopen(metaLinkFile.c_str(), "w");
+                if (fd != NULL) 
+                {
+                    fprintf(fd, "%s", strstr(chunk.data, "<?xml"));
+                    fclose(fd);
+                }
+                free(chunk.data);
+                break;
+            }
         }
+        free(chunk.data);
+        sleep(5);
     }
-    free(chunk.data);
     return metaLinkFile;
 }
