@@ -26,7 +26,7 @@ using namespace std;
  */
 
 std::string rucioServerUrl = "https://rucio-lb-prod.cern.ch/redirect/";
-std::string rucioServerCgi = "/metalink?schemes=root&select=geoip";
+std::string rucioServerCgi = "/metalink?schemes=root&sort=geoip";
 
 #define MetaLinkLifeTmin 1440 
 #define MetaLinkLifeTsec MetaLinkLifeTmin*60
