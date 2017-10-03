@@ -1,6 +1,6 @@
 Author: Wei Yang   SLAC National Accelerator Laboratory / Stanford University
 
-xrootd-N2N-DCP-for-RUCIO requires Xrootd release 4.7 and higher
+rucioN2N-for-Xcache requires Xrootd release 4.7 and higher
 
 This is a Xrootd (seach Github for xrootd) Ouc Name2Name plugin module to effeciently cache LHC ATLAS data files managed by the experiment's Distrubite Data Management (DDM) system (RUCIO). 
 
