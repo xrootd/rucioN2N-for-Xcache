@@ -28,7 +28,7 @@ rucioN2N-for-Xcache is a xrootd plugin module that will identify multiple copies
 rm -rf %{buildroot}
 pwd
 ls
-cd rucioN2N-for-Xcache
+cd rucioN2N-for-Xcache-%{version}
 # Caution !!!
 # if you build along with the xrootd rpms, uncommand the folloing line and comment out the 2 lines after it
 make
@@ -39,7 +39,7 @@ make
 mkdir -p %{buildroot}/usr/lib64
 # if you build along with the xrootd rpms, uncommand the folloing line and comment out the 1 lines after it
 #cp xrootd-server-atlas-n2n-plugin/N2N/cPlusPlus/src/XrdOucName2NameLFC.so   %{buildroot}/usr/lib64/XrdOucName2NameLFC.so
-cp rucioN2N-for-Xcache/XrdName2NameDCP4RUCIO.so %{buildroot}/usr/lib64/XrdName2NameDCP4RUCIO.so
+cp rucioN2N-for-Xcache-%{version}/XrdName2NameDCP4RUCIO.so %{buildroot}/usr/lib64/XrdName2NameDCP4RUCIO.so
 
 %clean
 rm -rf %{buildroot}
