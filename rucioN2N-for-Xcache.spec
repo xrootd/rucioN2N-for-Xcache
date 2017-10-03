@@ -10,7 +10,7 @@ URL:       https://github.com/wyang007/rucioN2N-for-Xcache
 %define _rpmfilename %%{ARCH}/%%{NAME}-%%{VERSION}-%%{RELEASE}.%%{ARCH}.rpm
 
 #Source0:   %{name}-src.%{version}.tar.gz
-Source0:   rucioN2N-for-Xcache.%{version}.tar.gz
+Source0:   rucioN2N-for-Xcache-%{version}.tar.gz
 BuildArch: x86_64
 BuildRoot:  %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 #BuildRequires: xrootd-server-devel json-c-devel xrootd-client-devel
