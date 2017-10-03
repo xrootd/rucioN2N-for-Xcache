@@ -14,9 +14,9 @@ Source0:   rucioN2N-for-Xcache-%{version}.tar.gz
 BuildArch: x86_64
 BuildRoot:  %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 #BuildRequires: xrootd-server-devel json-c-devel xrootd-client-devel
-BuildRequires: xrootd-devel xrootd-server-devel xrootd-client-devel 
+BuildRequires: xrootd-devel xrootd-server-devel xrootd-client-devel libcurl-devel
 
-Requires: xrootd >= 4.7.0 xrootd-client 
+Requires: xrootd >= 4.7.0 xrootd-client libcurl
 
 %description
 rucioN2N-for-Xcache is a xrootd plugin module that will identify multiple copies of a distributed file based on ATLAS RUCIO data management system. Please refers to project's twiki in github (https://github.com/wyang007/rucioN2N-for-Xcache) for more info.
