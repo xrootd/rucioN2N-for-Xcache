@@ -9,11 +9,9 @@ URL:       https://github.com/wyang007/rucioN2N-for-Xcache
 
 %define _rpmfilename %%{ARCH}/%%{NAME}-%%{VERSION}-%%{RELEASE}.%%{ARCH}.rpm
 
-#Source0:   %{name}-src.%{version}.tar.gz
 Source0:   rucioN2N-for-Xcache-%{version}.tar.gz
 BuildArch: x86_64
 BuildRoot:  %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
-#BuildRequires: xrootd-server-devel json-c-devel xrootd-client-devel
 BuildRequires: xrootd-devel xrootd-server-devel xrootd-client-devel libcurl-devel
 
 Requires: xrootd >= 4.7.0 xrootd-client libcurl
@@ -37,8 +35,6 @@ make
 
 %install
 mkdir -p %{buildroot}/usr/lib64
-# if you build along with the xrootd rpms, uncommand the folloing line and comment out the 1 lines after it
-#cp xrootd-server-atlas-n2n-plugin/N2N/cPlusPlus/src/XrdOucName2NameLFC.so   %{buildroot}/usr/lib64/XrdOucName2NameLFC.so
 cp rucioN2N-for-Xcache-%{version}/XrdName2NameDCP4RUCIO.so %{buildroot}/usr/lib64/XrdName2NameDCP4RUCIO.so
 
 %clean
@@ -46,8 +42,6 @@ rm -rf %{buildroot}
 
 %files
 %defattr(-,root,root)
-# if you build along with the xrootd rpms, uncommand the folloing line and comment out the 1 lines after it
-#/usr/lib64/XrdOucName2NameLFC.so
 /usr/lib64/XrdName2NameDCP4RUCIO.so
 
 %post -p /sbin/ldconfig
