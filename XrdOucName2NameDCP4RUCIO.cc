@@ -99,32 +99,37 @@ int XrdOucName2NameDiskCacheProxy4Rucio::lfn2pfn(const char* lfn, char* buff, in
         return 0;
     }
 
+    myPfn = "";
     myLfn = lfn;
+// see comments in pfn2cache()
+
+// check if this is ...rucio/scope:file format
     i = myLfn.rfind("rucio");
-// see comments in pfn2lfn()
     if (i != string::npos)
     {
         rucioDID = myLfn.substr(i + 5, myLfn.length() -i -5); // with a leading "/"
         if (rucioDID.rfind("/") < rucioDID.rfind(":") && rucioDID.rfind(":") != string::npos)
-        {
             myPfn = getMetaLink(rucioDID);
-            if (myPfn != "") 
-            {
-                blen = myPfn.length();
-                strncpy(buff, myPfn.c_str(), blen);
-                buff[blen] = 0;
-                return 0;
-            }
-        }
     }
 
-    myPfn = makeMetaLink(lfn); 
-    if (myPfn != "")
+//  otherwise, check if this is /atlas/rucio/scope/xx/xx/file format but not 
+//  /root:/host//xxx/atlas/rucio/scope/xx/xx/file
+//  note: since we already check scope:file (above), we just assume this is /atlas/rucio/scope/xx/xx/file
+    i = myLfn.rfind("/atlas/rucio");
+    if (myPfn == "" && i != string::npos && myLfn.find("/root:/") != 0)
     {
-        blen = myPfn.length();
-        strncpy(buff, myPfn.c_str(), blen);
-        buff[blen] = 0;
-    }    
+        rucioDID = myLfn.substr(i + 12, myLfn.length() -i -12); // with a leading "/"
+        rucioDID = rucioDID.replace(rucioDID.rfind("/") -6, 7, ":");
+        myPfn = getMetaLink(rucioDID);
+    }
+
+    if (myPfn == "") 
+        myPfn = makeMetaLink(lfn);  // getMetaLink() was never called
+
+    blen = myPfn.length();
+    strncpy(buff, myPfn.c_str(), blen);
+    buff[blen] = 0;
+
     return 0;
 }
 
