@@ -95,7 +95,11 @@ mkdir -p /data/xrd/namespace /data/xrd/xrdcinfos /data/xrd/datafiles
 mkdir -p /data/xrd/var/log /data/xrd/var/spool /data/xrd/var/run
 
 [ -z "$XCACHE_RDR" ] && XCACHE_RDR="www.google.com"
-[ -z "$XCACHE_PFCRAM" ] && XCACHE_PFCRAM=$(free | tail -2 | head -1 | awk '{printf("%dg", $4/1024/1024)}')
+if [ -z "$XCACHE_PFCRAM" ]; then
+  XCACHE_PFCRAM=$(free | tail -2 | head -1 | awk '{printf("%d", $NF/1024/1024/2)}')
+  [ $XCACHE_PFCRAM -lt 1 ] && XCACHE_PFCRAM=1
+  XCACHE_PFCRAM=${XCACHE_PFCRAM}g
+fi
 [ -z "$XCACHE_SPACE_LO_MARK" ] && XCACHE_SPACE_LO_MARK="0.75"
 [ -z "$XCACHE_SPACE_HI_MARK" ] && XCACHE_SPACE_HI_MARK="0.85"
 
@@ -111,9 +115,11 @@ else
 # bind mount the new config file to /etc/xrootd/xcache.cfg
 
 # Info about the system:
+
 EOF
 
   free | sed -e 's/^/\#\ /g' >> $xcache_cfg
+  echo "" >> $xcache_cfg
   df -k /data | sed -e 's/^/\#\ /g' >> $xcache_cfg
   echo "" >> $xcache_cfg
   cat /etc/xrootd/xcache.cfg.template | sed -e "s/XCACHE_SPACE_LO_MARK/$XCACHE_SPACE_LO_MARK/g" | \
