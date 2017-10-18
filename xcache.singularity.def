@@ -1,0 +1,97 @@
+Bootstrap: yum
+OSVersion: 7
+MirrorURL: http://mirror.centos.org/centos-%{OSVERSION}/%{OSVERSION}/os/$basearch/
+Include: yum
+
+%labels
+Maintainer Wei.Yang
+Version v1.0
+Purpose Xcache-4.7.1
+
+%setup
+  mkdir -p $SINGULARITY_ROOTFS/etc/grid-security/certificates 
+  mkdir -p $SINGULARITY_ROOTFS/etc/grid-security/vomsdir
+  cd /cvmfs/oasis.opensciencegrid.org/mis/osg-wn-client/current/el7-x86_64/etc/grid-security
+  tar chf - certificates | (cd $SINGULARITY_ROOTFS/etc/grid-security; tar xf -)
+  tar chf - vomsdir | (cd $SINGULARITY_ROOTFS/etc/grid-security; tar xf -)
+
+%post
+  mkdir /u
+  yum install -y vi
+
+  cat > /etc/yum.repos.d/xrootd-stable.repo <<EOF1
+[xrootd-stable]
+name=XRootD Stable repository
+baseurl=http://xrootd.org/binaries/stable/slc/7/\$basearch http://xrootd.cern.ch/sw/repos/stable/slc/7/\$basearch
+gpgcheck=1
+enabled=1
+protect=0
+gpgkey=http://xrootd.cern.ch/sw/releases/RPM-GPG-KEY.txt
+EOF1
+
+  yum install -y xrootd-server xrootd-client xrootd
+  yum install -y http://www.slac.stanford.edu/~yangw/atlas/rucio-n2n/xrootd-rucioN2N-for-Xcache-1.0-0.el7.centos.x86_64.rpm
+  mkdir -p /data 
+
+  cat > /etc/xrootd/xcache.cfg.template <<EOF2
+all.export   /atlas/rucio r/o
+all.export   /root:/
+all.export   /xroot:/
+
+xrootd.async maxtot 16384 limit 32
+all.adminpath /data/xrd/var/spool/xrootd
+all.pidpath /data/xrd/run/xrootd
+
+oss.localroot  /data/xrd/namespace
+oss.space meta /data/xrd/xrdcinfos
+oss.space data /data/xrd/datafiles
+oss.path /atlas/rucio r/w
+
+pfc.ram XCACHE_RAMSIZE
+pfc.diskusage XCACHE_SPACE_LO_MARK XCACHE_SPACE_HI_MARK
+
+pfc.spaces data meta
+pfc.blocksize 1M
+pfc.prefetch 0
+pfc.trace info
+
+ofs.osslib  /usr/lib64/libXrdPss.so
+
+pss.origin localfile:1094
+pss.cachelib /usr/lib64/libXrdFileCache.so
+pss.config streams 512
+
+pss.namelib -lfncache -lfn2pfn /usr/lib64/XrdName2NameDCP4RUCIO.so
+EOF2
+
+%runscript
+# X509_USER_PROXY, X509_CERT_DIR, X509_VOMS_DIR don't have to be defined/provided
+
+# if x509 user proxy is provided in a non-standard location (/tmp/x509up_u$(id -u)), 
+# then the proxy should be bind mounted: -B ${X509_USER_PROXY}:/etc/grid-security/x509up
+
+unset X509_USER_PROXY
+[ -f /etc/grid-security/x509up ] && export X509_USER_PROXY=/etc/grid-security/x509up
+
+# if X509_CERT_DIR is not defined, or is inaccessible in the container, then we use
+# the default location. Same for X509_VOMS_DIR.
+# One can also bind mount:
+#     -B ${X509_CERT_DIR}:/etc/grid-security/certificates
+#     -B ${X509_VOMS_DIR}:/etc/grid-security/vomsdir
+
+[ ! -z "$X509_CERT_DIR" ] && [ ! -d "$X509_CERT_DIR" ] && export X509_CERT_DIR=/etc/grid-security/certificates
+[ ! -z "$X509_VOMS_DIR" ] && [ ! -d "$X509_VOMS_DIR" ] && export X509_VOMS_DIR=/etc/grid-security/vomsdir 
+ 
+mkdir -p /data/xrd/namespace /data/xrd/xrdcinfos /data/xrd/datafiles
+mkdir -p /data/xrd/var/log /data/xrd/var/spool /data/xrd/var/run
+
+[ -z "$XCACHE_PFCRAM" ] && XCACHE_PFCRAM=$(free | tail -2 | head -1 | awk '{printf("%dg", $4/1024/1024)}')
+[ -z "$XCACHE_SPACE_LO_MARK" ] && XCACHE_SPACE_LO_MARK="0.75"
+[ -z "$XCACHE_SPACE_HI_MARK" ] && XCACHE_SPACE_HI_MARK="0.85"
+
+cat /etc/xrootd/xcache.cfg.template | sed -e "s/XCACHE_SPACE_LO_MARK/$XCACHE_SPACE_LO_MARK/g" | \
+                                      sed -e "s/XCACHE_SPACE_HI_MARK/$XCACHE_SPACE_HI_MARK/g" | \
+                                      sed -e "s/XCACHE_RAMSIZE/$XCACHE_PFCRAM/g" > /tmp/xcache.cfg
+
+#echo $X509_USER_PROXY $X509_CERT_DIR $X509_VOMS_DIR
+/usr/bin/xrootd -b -c /tmp/xcache.cfg -l /data/xrd/var/log/xcache.log
