@@ -1,3 +1,7 @@
+#
+# Author: Wei Yang (SLAC National Accelerator Laboratory / Stanford University, 2017)
+#
+
 Bootstrap: yum
 OSVersion: 7
 MirrorURL: http://mirror.centos.org/centos-%{OSVERSION}/%{OSVERSION}/os/$basearch/
@@ -19,7 +23,7 @@ Purpose Xcache-for-RUCIO
   fi
 
 %post
-  yum install -y curl gperftools 
+  yum install -y curl gperftools hostname
 
   curl -s -o /etc/yum.repos.d/xrootd-stable-slc7.repo http://www.xrootd.org/binaries/xrootd-stable-slc7.repo
   curl -s -o /etc/pki/rpm-gpg/RPM-GPG-KEY-wlcg http://linuxsoft.cern.ch/wlcg/RPM-GPG-KEY-wlcg
@@ -94,7 +98,12 @@ unset X509_USER_PROXY
 mkdir -p /data/xrd/namespace /data/xrd/xrdcinfos /data/xrd/datafiles
 mkdir -p /data/xrd/var/log /data/xrd/var/spool /data/xrd/var/run
 
-[ -z "$XCACHE_RDR" ] && XCACHE_RDR="www.google.com"
+runcmsd=0
+if [ -z "$XCACHE_RDR" ]; then
+  XCACHE_RDR="www.google.com" # XCACHE_RDR must be defined
+else
+  runcmsd=1
+fi
 if [ -z "$XCACHE_PFCRAM" ]; then
   XCACHE_PFCRAM=$(free | tail -2 | head -1 | awk '{printf("%d", $NF/1024/1024/2)}')
   [ $XCACHE_PFCRAM -lt 1 ] && XCACHE_PFCRAM=1
@@ -132,4 +141,5 @@ fi
 
 export LD_PRELOAD=/usr/lib64/libtcmalloc.so
 export TCMALLOC_RELEASE_RATE=10
-/usr/bin/xrootd -b -c $xcache_cfg -l /data/xrd/var/log/xcache.log -k 7
+/usr/bin/xrootd -b -c $xcache_cfg -l /data/xrd/var/log/xrootd.log -k 7
+[ "$runcmsd" -eq 1 ] && /usr/bin/cmsd -b -c $xcache_cfg -l /data/xrd/var/log/cmsd.log -k 7
