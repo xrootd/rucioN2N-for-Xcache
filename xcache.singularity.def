@@ -15,11 +15,14 @@ Purpose Xcache-for-RUCIO
 %setup
   mkdir -p $SINGULARITY_ROOTFS/etc/grid-security/certificates 
   mkdir -p $SINGULARITY_ROOTFS/etc/grid-security/vomsdir
-  gridsecurity="/cvmfs/oasis.opensciencegrid.org/mis/osg-wn-client/current/el7-x86_64/etc/grid-security"
-  if [ -d $gridsecurity ]; then
-    cd $gridsecurity
-    tar chf - certificates | (cd $SINGULARITY_ROOTFS/etc/grid-security; tar xf -)
-    tar chf - vomsdir | (cd $SINGULARITY_ROOTFS/etc/grid-security; tar xf -)
+
+  # $GRIDSECURITY is a directory on container local build host
+  # GRIDSECURITY=/etc/grid-security
+
+  GRIDSECURITY="/cvmfs/oasis.opensciencegrid.org/mis/osg-wn-client/current/el7-x86_64/etc/grid-security"
+  if [ -d $GRIDSECURITY ]; then
+    cd $GRIDSECURITY
+    tar chf - certificates vomsdir | (cd $SINGULARITY_ROOTFS/etc/grid-security; tar xf -)
   fi
 
 %post
@@ -78,7 +81,7 @@ fi
 EOF
 
 %runscript
-# X509_USER_PROXY, X509_CERT_DIR, X509_VOMS_DIR don't have to be defined/provided
+# X509_USER_PROXY, X509_CERT_DIR, X509_VOMS_DIR do not have to be defined/provided
 
 # if x509 user proxy is provided in a non-standard location (/tmp/x509up_u$(id -u)), 
 # then the proxy should be bind mounted: -B ${X509_USER_PROXY}:/var/run/x509up
