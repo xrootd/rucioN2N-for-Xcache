@@ -6,6 +6,7 @@ using namespace std;
 
 #include <stdio.h>
 #include <string>
+#include <errno.h>
 #include <openssl/md5.h>
 #include "XrdVersion.hh"
 XrdVERSIONINFO(XrdOucgetName2Name, "N2N-DCP4RUCIO");
@@ -103,28 +104,31 @@ int XrdOucName2NameDiskCacheProxy4Rucio::lfn2pfn(const char* lfn, char* buff, in
     myLfn = lfn;
 // see comments in pfn2cache()
 
-// check if this is ...rucio/scope:file format
-    i = myLfn.rfind("rucio");
-    if (i != string::npos)
+    if (myLfn.find("/root:/") == 0) 
+        myPfn = makeMetaLink(lfn);  // Assume the client know the data source...
+    else
     {
-        rucioDID = myLfn.substr(i + 5, myLfn.length() -i -5); // with a leading "/"
-        if (rucioDID.rfind("/") < rucioDID.rfind(":") && rucioDID.rfind(":") != string::npos)
-            myPfn = getMetaLink(rucioDID);
+        i = myLfn.rfind("/atlas/rucio");
+        if (i == 0)
+        {
+            rucioDID = myLfn.substr(i + 12, myLfn.length() -i -12); // with a leading "/"
+            if (rucioDID.rfind("/") < rucioDID.rfind(":") && rucioDID.rfind(":") != string::npos)
+// check if this is /atlas/rucio/scope:file format
+                myPfn = getMetaLink(rucioDID);
+            else
+            {
+// otherwise, assume this is /atlas/rucio/scope/xx/xx/file format
+                rucioDID = rucioDID.replace(rucioDID.rfind("/") -6, 7, ":");
+                myPfn = getMetaLink(rucioDID);           
+            }
+        }
+        else
+            myPfn="ENOENT";
     }
-
-//  otherwise, check if this is /atlas/rucio/scope/xx/xx/file format but not 
-//  /root:/host//xxx/atlas/rucio/scope/xx/xx/file
-//  note: since we already check scope:file (above), we just assume this is /atlas/rucio/scope/xx/xx/file
-    i = myLfn.rfind("/atlas/rucio");
-    if (myPfn == "" && i != string::npos && myLfn.find("/root:/") != 0)
-    {
-        rucioDID = myLfn.substr(i + 12, myLfn.length() -i -12); // with a leading "/"
-        rucioDID = rucioDID.replace(rucioDID.rfind("/") -6, 7, ":");
-        myPfn = getMetaLink(rucioDID);
-    }
-
-    if (myPfn == "") 
-        myPfn = makeMetaLink(lfn);  // getMetaLink() was never called
+    if (myPfn == "EFAULT")
+        return EFAULT;
+    else if (myPfn == "ENOENT") 
+        return ENOENT;
 
     blen = myPfn.length();
     strncpy(buff, myPfn.c_str(), blen);

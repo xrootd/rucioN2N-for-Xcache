@@ -16,6 +16,7 @@ using namespace std;
 #include <openssl/md5.h>
 #include <string>
 #include <thread>
+#include "XrdCl/XrdClURL.hh"
 
 /* 
  * From Vincent / Mario:
@@ -113,6 +114,9 @@ std::string makeMetaLink(const std::string pfn)
     myPfn.replace(0, 7, "");
     myPfn.replace(myPfn.find("/"), 1, "//");
     myPfn = "root://" + myPfn;
+
+    XrdCl::URL rootURL = myPfn;
+    if (!rootURL.IsValid()) return "EFAULT"; 
 
     metaLinkFile = myPfn;
     if (metaLinkFile.find("root://") == 0)
@@ -240,5 +244,7 @@ std::string getMetaLink(const std::string DID)
         free(chunk.data);
         sleep(5);
     }
-    return metaLinkFile;
+// always return a metaLinkFile path. If the actual file does not exist (because RUCIO 
+// does not know the file), then this is the same as returning an ENOENT
+    return metaLinkFile;  
 }

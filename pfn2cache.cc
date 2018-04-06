@@ -29,17 +29,17 @@ std::string pfn2cache(const std::string localMetaLinkRootDir, const char* pfn)
         myPfn.replace(myPfn.rfind(".meta4"), 6, "");
     }
 
-    i = myPfn.rfind("rucio");
-    // if pfn doesn't have "rucio", then rucioDID = pfn
+    i = myPfn.rfind("/rucio/");
+    // if pfn doesn't have "/rucio/", then rucioDID = pfn
     //     buff = pfn
-    // if pfn does have "rucio", rucioDID will point to the string after the last 
+    // if pfn does have "/rucio/", rucioDID will point to the string after the last 
     // "rucio", including the leading "/"
     //     buff = /atlas/rucio<rucioDID>
     if (i == string::npos)
         cachePath = myPfn;
     else
     {
-        rucioDID = myPfn.substr(i + 5, myPfn.length() -i -5);  // with a leading "/"
+        rucioDID = myPfn.substr(i + 6, myPfn.length() -i -6);  // with a leading "/"
 
         // Check if this is a FAX gLFN without the leading "/atlas/rucio". 
         // The gLFN format is /atlas/rucio/scope:file. 
@@ -49,7 +49,7 @@ std::string pfn2cache(const std::string localMetaLinkRootDir, const char* pfn)
         // In PFN, "/" is used in scope instead of ".". It is best for the cache to do 
         // this as well for gLFN to improve caching efficiency
         if (rucioDID.rfind("/") < rucioDID.rfind(":") && rucioDID.rfind(":") != string::npos)
-        {
+        { // likely be called by XrdOssStatInfo
             slashScope = rucioDID.substr(1, rucioDID.find(":") -1);
             scope = slashScope;
 
