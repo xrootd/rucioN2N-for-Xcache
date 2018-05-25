@@ -35,6 +35,6 @@ pfn2cache.o: pfn2cache.cc ${HEADERS} Makefile
 	g++ ${DEBUG} ${FLAGS} -fPIC -I ${XRD_INC} -I ${XRD_LIB} -c -o $@ $<
 
 clean:
-	rm -vf XrdName2NameDCP4RUCIO.{o,so} rucioGetMetaLink.{o,so}
+	rm -vf *.{o,so}
 
 
