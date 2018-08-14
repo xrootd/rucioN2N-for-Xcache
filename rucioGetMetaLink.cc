@@ -205,7 +205,7 @@ std::string getMetaLink(const std::string DID)
     CURL *curl_handle;
     CURLcode res;
 
-    for (int ii = 0; ii<2; ii++)
+    for (int ii = 0; ii<3; ii++)
     {
         chunk.data = (char*)malloc(1);  // will be grown as needed by the realloc above 
         chunk.size = 0;    // no data at this point  
@@ -218,7 +218,7 @@ std::string getMetaLink(const std::string DID)
         curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, rucioGetMetaLinkCallback);
         curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *)&chunk);
         curl_easy_setopt(curl_handle, CURLOPT_FOLLOWLOCATION, 1L);
-        curl_easy_setopt(curl_handle, CURLOPT_TIMEOUT, 60L);
+        curl_easy_setopt(curl_handle, CURLOPT_TIMEOUT, 180L);
        
         // some servers don't like requests that are made without a user-agent
         // field, so we provide one 
@@ -229,7 +229,8 @@ std::string getMetaLink(const std::string DID)
         // check for errors
         if(res == CURLE_OK)
         {
-            if (! strncmp(chunk.data, "HTTP/1.1 200 OK", 15))
+            if (! strncmp(chunk.data, "HTTP/1.1 200 OK", 15) ||
+                ! strncmp(chunk.data + chunk.size - 11, "</metalink>", 11)) // simple sanity check
             {
                 FILE *fd = fopen(metaLinkFile.c_str(), "w");
                 if (fd != NULL) 
