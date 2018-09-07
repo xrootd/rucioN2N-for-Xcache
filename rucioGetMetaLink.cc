@@ -17,6 +17,7 @@ using namespace std;
 #include <string>
 #include <thread>
 #include "XrdCl/XrdClURL.hh"
+#include "XrdSys/XrdSysError.hh"
 
 /* 
  * From Vincent / Mario:
@@ -146,7 +147,7 @@ std::string makeMetaLink(const std::string pfn)
     return metaLinkFile; 
 }
 
-std::string getMetaLink(const std::string DID)
+std::string getMetaLink(XrdSysError* eDest, const std::string myName, const std::string DID)
 {
     std::string rucioDID, scope, slashScope, file, metaLinkDir, metaLinkFile, rucioMetaLinkURL;
     std::string tmp;
@@ -192,8 +193,11 @@ std::string getMetaLink(const std::string DID)
         return metaLinkFile;
     }
      
-    if (mkdir_p(metaLinkDir)) return metaLinkFile;
-
+    if (mkdir_p(metaLinkDir)) 
+    {
+        eDest->Say((myName + ": Fail to create metalink dir " + metaLinkDir).c_str());
+        return metaLinkFile;
+    }
     rucioMetaLinkURL = rucioServerUrl + scope + "/" + file + rucioServerCgi;
 
     // -f prevent an output to be created if DID doesn't exist
@@ -205,7 +209,7 @@ std::string getMetaLink(const std::string DID)
     CURL *curl_handle;
     CURLcode res;
 
-    for (int ii = 0; ii<3; ii++)
+    for (long long int ii = 0; ii < 3; ii++)
     {
         chunk.data = (char*)malloc(1);  // will be grown as needed by the realloc above 
         chunk.size = 0;    // no data at this point  
@@ -238,10 +242,21 @@ std::string getMetaLink(const std::string DID)
                     fprintf(fd, "%s", strstr(chunk.data, "<?xml"));
                     fclose(fd);
                 }
+                else
+                    eDest->Say((myName + ": Fail to write metalink file for " + DID 
+                                + ". Try #" + to_string(ii)).c_str());
                 free(chunk.data);
                 break;
             }
+            else if (strncmp(chunk.data, "HTTP/1.1 200 OK", 15))
+                eDest->Say((myName + ": Err fetching metalink for " + DID + ". Try #" + to_string(ii) 
+                            + ": " + string(chunk.data, 30)).c_str());
+            else 
+                eDest->Say((myName + ": Err fetching metalink for " + DID + ", Try #" + to_string(ii)
+                            + ": " + string(chunk.data + chunk.size - 30)).c_str());
         }
+        else 
+            eDest->Say((myName + ": Err downloading metalink for " + DID + " try #" + to_string(ii)).c_str());
         free(chunk.data);
         sleep(5);
     }

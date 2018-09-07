@@ -43,7 +43,7 @@ XrdOucName2NameDiskCacheProxy4Rucio::XrdOucName2NameDiskCacheProxy4Rucio(XrdSysE
     std::size_t i;
     int x;
 
-    myName = "XrdOucN2N-InvRucio";
+    myName = "Xcache4RUCIO";
     eDest = erp;
     localMetaLinkRootDir = "/dev/shm/atlas";
     
@@ -114,12 +114,12 @@ int XrdOucName2NameDiskCacheProxy4Rucio::lfn2pfn(const char* lfn, char* buff, in
             rucioDID = myLfn.substr(i + 12, myLfn.length() -i -12); // with a leading "/"
             if (rucioDID.rfind("/") < rucioDID.rfind(":") && rucioDID.rfind(":") != string::npos)
 // check if this is /atlas/rucio/scope:file format
-                myPfn = getMetaLink(rucioDID);
+                myPfn = getMetaLink(eDest, myName, rucioDID);
             else
             {
 // otherwise, assume this is /atlas/rucio/scope/xx/xx/file format
                 rucioDID = rucioDID.replace(rucioDID.rfind("/") -6, 7, ":");
-                myPfn = getMetaLink(rucioDID);           
+                myPfn = getMetaLink(eDest, myName, rucioDID);           
             }
         }
         else
