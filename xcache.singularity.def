@@ -160,5 +160,8 @@ fi
 export LD_PRELOAD=/usr/lib64/libtcmalloc.so
 export TCMALLOC_RELEASE_RATE=10
 export XRD_LOCALMETALINKFILE=1
+export XRD_CONNECTIONWINDOW=10
+export XRD_CONNECTIONRETRY=2
+
 /usr/bin/xrootd -b -c $xcache_cfg -l /data/xrd/var/log/xrootd.log -k 7
 [ "$runcmsd" -eq 1 ] && /usr/bin/cmsd -b -c $xcache_cfg -l /data/xrd/var/log/cmsd.log -k 7
