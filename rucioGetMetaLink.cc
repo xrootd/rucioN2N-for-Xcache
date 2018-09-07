@@ -54,6 +54,8 @@ void cleaner()
     }
 }
 
+static int Xcache4RUCIO_DBG = 0;
+
 void rucioGetMetaLinkInit(const std::string dir) 
 {
      localMetaLinkRootDir = dir;
@@ -61,6 +63,8 @@ void rucioGetMetaLinkInit(const std::string dir)
      std::thread cleanning(cleaner);
      cleanning.detach();
      curl_global_init(CURL_GLOBAL_ALL);
+
+     if (getenv("Xcache4RUCIO_DBG") != NULL) Xcache4RUCIO_DBG = atoi(getenv("Xcache4RUCIO_DBG"));
 }
 
 static size_t rucioGetMetaLinkCallback(void *contents, size_t size, size_t nmemb, void *userp)
@@ -209,7 +213,7 @@ std::string getMetaLink(XrdSysError* eDest, const std::string myName, const std:
     CURL *curl_handle;
     CURLcode res;
 
-    for (long long int ii = 0; ii < 3; ii++)
+    for (int ii = 0; ii < 3; ii++)
     {
         chunk.data = (char*)malloc(1);  // will be grown as needed by the realloc above 
         chunk.size = 0;    // no data at this point  
@@ -241,22 +245,33 @@ std::string getMetaLink(XrdSysError* eDest, const std::string myName, const std:
                 {
                     fprintf(fd, "%s", strstr(chunk.data, "<?xml"));
                     fclose(fd);
+                    if (Xcache4RUCIO_DBG > 0) 
+                        eDest->Say((myName + ": Successfully download metalink for " 
+                                    + DID.substr(1, string::npos)).c_str());
                 }
                 else
-                    eDest->Say((myName + ": Fail to write metalink file for " + DID 
-                                + ". Try #" + to_string(ii)).c_str());
+                    eDest->Say((myName + ": Fail to write metalink for " 
+                                       + DID.substr(1, string::npos)).c_str());
                 free(chunk.data);
                 break;
             }
+            else if (! strncmp(chunk.data, "HTTP/1.1 404 Not Found", 22)) 
+            {
+                eDest->Say((myName + ": Err RUCIO does not know " + DID.substr(1, string::npos)).c_str());
+                break;
+            }
             else if (strncmp(chunk.data, "HTTP/1.1 200 OK", 15))
-                eDest->Say((myName + ": Err fetching metalink for " + DID + ". Try #" + to_string(ii) 
-                            + ": " + string(chunk.data, 30)).c_str());
+                eDest->Say((myName + ": Err fetching metalink for " + DID.substr(1, string::npos) 
+                            + " . Try #" + std::to_string((long long int)ii) 
+                            + ": " + std::string(chunk.data, 30)).c_str());
             else 
-                eDest->Say((myName + ": Err fetching metalink for " + DID + ", Try #" + to_string(ii)
-                            + ": " + string(chunk.data + chunk.size - 30)).c_str());
+                eDest->Say((myName + ": Err fetching metalink for " + DID.substr(1, string::npos)
+                            + " . Try #" + std::to_string((long long int)ii) 
+                            + ": " + std::string(chunk.data + chunk.size - 30)).c_str());
         }
         else 
-            eDest->Say((myName + ": Err downloading metalink for " + DID + " try #" + to_string(ii)).c_str());
+            eDest->Say((myName + ": Err downloading metalink for " + DID.substr(1, string::npos)
+                        + " . Try #" + std::to_string((long long int)ii)).c_str());
         free(chunk.data);
         sleep(5);
     }
