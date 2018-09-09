@@ -123,9 +123,9 @@ else
   runcmsd=1
 fi
 if [ -z "$XCACHE_PFCRAM" ]; then
-  XCACHE_PFCRAM=$(free | tail -2 | head -1 | awk '{printf("%d", $NF/1024/1024/4)}')
+  XCACHE_PFCRAM=$(free | tail -2 | head -1 | awk '{printf("%d", $NF/1024/1024/2)}')
   [ $XCACHE_PFCRAM -lt 1 ] && XCACHE_PFCRAM=1
-  [ $XCACHE_PFCRAM -gt 8 ] && XCACHE_PFCRAM=8
+  [ $XCACHE_PFCRAM -gt 64 ] && XCACHE_PFCRAM=64
   XCACHE_PFCRAM=${XCACHE_PFCRAM}g
 fi
 [ -z "$XCACHE_SPACE_LO_MARK" ] && XCACHE_SPACE_LO_MARK="0.75"
