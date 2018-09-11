@@ -20,13 +20,20 @@ std::string pfn2cache(const std::string localMetaLinkRootDir, const char* pfn)
     char md5string[MD5_DIGEST_LENGTH*2+1];
 
     myPfn = pfn;
-    // if myPfn starts with "localMetaLinkRootDir" and ends with ".meta4", this function is called after lfn2pfn
-    // and we need to remove the starting "localMetaLinkRootDir" and tailing ".meta4"
+    // if myPfn starts with "localMetaLinkRootDir" and ends with ".meta4" or ".metalink", this function is
+    // called after lfn2pfn and we need to remove the starting "localMetaLinkRootDir" and tailing ".meta4"
     if (myPfn.find(localMetaLinkRootDir) == 0 &&
         myPfn.rfind(".meta4") == (myPfn.length() - 6))
     {
         myPfn.replace(0, localMetaLinkRootDir.length(), "");
         myPfn.replace(myPfn.rfind(".meta4"), 6, "");
+    }
+
+    if (myPfn.find(localMetaLinkRootDir) == 0 &&
+        myPfn.rfind(".metalink") == (myPfn.length() - 9))
+    {
+        myPfn.replace(0, localMetaLinkRootDir.length(), "");
+        myPfn.replace(myPfn.rfind(".metalink"), 9, "");
     }
 
     i = myPfn.rfind("/rucio/");

@@ -16,6 +16,8 @@ using namespace std;
 #include <openssl/md5.h>
 #include <string>
 #include <thread>
+#include "checkPFCcinfo.hh"
+#include "pfn2cache.hh"
 #include "XrdCl/XrdClURL.hh"
 #include "XrdSys/XrdSysError.hh"
 
@@ -40,6 +42,7 @@ struct rucioMetaLink
 };
 
 std::string localMetaLinkRootDir;
+std::string ossLocalRoot;
 
 void cleaner()
 {
@@ -56,9 +59,10 @@ void cleaner()
 
 static int Xcache4RUCIO_DBG = 0;
 
-void rucioGetMetaLinkInit(const std::string dir) 
+void rucioGetMetaLinkInit(const std::string dir, const std::string osslocalroot) 
 {
      localMetaLinkRootDir = dir;
+     ossLocalRoot = osslocalroot;
 
      std::thread cleanning(cleaner);
      cleanning.detach();
@@ -109,7 +113,11 @@ int mkdir_p(const std::string dir)
 
 // Both makeMetaLink() and getMetaLink() should return metaLinkFile even if we can't create or download 
 // a metalink. A file-not-found error will eventually be gerenated.
-std::string makeMetaLink(const std::string pfn)
+
+// Use .meta4 for files that have not been fully cached. 
+// Use .metalink for files that have been completely cached. In this case, a .metalink contains only one
+// data source at file://localhost//... so that we don't need to Open() with a remote data source.
+std::string makeMetaLink(XrdSysError* eDest, const std::string myName, const std::string pfn)
 {
     std::string metaLinkDir, metaLinkFile, myPfn, tmp;
     size_t i;
@@ -129,11 +137,43 @@ std::string makeMetaLink(const std::string pfn)
         metaLinkFile = metaLinkFile.replace(0, 7, "");   // remote "root://"
         metaLinkFile = metaLinkFile.replace(0, metaLinkFile.find("/")+2, "");  // remote loginid@hostnaem:port//
     }
-    metaLinkFile = localMetaLinkRootDir + "/" + metaLinkFile + ".meta4";
+
+    std::string cinfofile = "/" + pfn2cache("", metaLinkFile.c_str()) + ".cinfo";
+    metaLinkFile = localMetaLinkRootDir + "/" + metaLinkFile + ".metalink";
+
     metaLinkDir = metaLinkFile;
     i = metaLinkDir.rfind("/");
     metaLinkDir.replace(i, metaLinkDir.length() - i+1, "");
-    if (mkdir_p(metaLinkDir)) return metaLinkFile;
+    if (mkdir_p(metaLinkDir)) 
+    {
+        eDest->Say((myName + ": Fail to create metalink dir " + metaLinkDir).c_str());
+        return metaLinkFile;
+    }
+
+    struct stat statBuf;
+    if (! stat(metaLinkFile.c_str(), &statBuf))
+        return metaLinkFile;
+
+    if (checkPFCcinfoIsComplete(cinfofile))
+    {
+        FILE *fd = fopen(metaLinkFile.c_str(), "w");
+        if (fd != NULL)
+        {
+            tmp  = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
+            tmp += "<metalink xmlns=\"urn:ietf:params:xml:ns:metalink\">\n";
+            tmp += "  <file name=\"x\">\n";
+            tmp += "    <url location=\"LOCAL\" priority=\"1\">file://localhost/" + ossLocalRoot
+                 + cinfofile.substr(0, cinfofile.rfind(".cinfo"))+ "</url>\n";
+            tmp += "  </file>\n";
+            tmp += "</metalink>\n";
+
+            fprintf(fd, "%s", tmp.c_str());
+            fclose(fd);
+        }
+        return metaLinkFile;
+    }
+    else
+        metaLinkFile = metaLinkFile.replace(metaLinkFile.rfind(".metalink"), 9, ".meta4");
 
     FILE *fd = fopen(metaLinkFile.c_str(), "w");
     if (fd != NULL) 
@@ -181,14 +221,52 @@ std::string getMetaLink(XrdSysError* eDest, const std::string myName, const std:
     rucioDID = scope + ":" + file;
     MD5_Update(&c, rucioDID.c_str(), rucioDID.length());
     MD5_Final(md5digest, &c);
-    for(i = 0; i < MD5_DIGEST_LENGTH; ++i)
+//    for(i = 0; i < MD5_DIGEST_LENGTH; ++i)
+    for(i = 0; i < 2; ++i)
         sprintf(&md5string[i*2], "%02x", (unsigned int)md5digest[i]);
-    md5string[MD5_DIGEST_LENGTH*2+1] = '\0';
+//    md5string[MD5_DIGEST_LENGTH*2+1] = '\0';
+    md5string[2*2+1] = '\0';
     tmp = md5string;
+
+    std::string cinfofile;
+
+    cinfofile = "/atlas/rucio/" + slashScope + "/"
+                + tmp.substr(0, 2) + "/" + tmp.substr(2, 2) + "/"
+                + file + ".cinfo";
     
     metaLinkDir = localMetaLinkRootDir + "/atlas/rucio/" + slashScope + "/" 
                 + tmp.substr(0, 2) + "/" + tmp.substr(2, 2);
-    metaLinkFile = metaLinkDir + "/" + file + ".meta4";
+    if (mkdir_p(metaLinkDir)) 
+    {
+        eDest->Say((myName + ": Fail to create metalink dir " + metaLinkDir).c_str());
+        return metaLinkFile;
+    }
+    metaLinkFile = metaLinkDir + "/" + file + ".metalink";
+ 
+    if (! stat(metaLinkFile.c_str(), &statBuf))
+        return metaLinkFile;
+
+    if (checkPFCcinfoIsComplete(cinfofile))
+    {
+        FILE *fd = fopen(metaLinkFile.c_str(), "w");
+        if (fd != NULL) 
+        {
+            tmp  = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
+            tmp += "<metalink xmlns=\"urn:ietf:params:xml:ns:metalink\">\n";
+            tmp += "  <file name=\"x\">\n";
+            tmp += "    <url location=\"LOCAL\" priority=\"1\">file://localhost/" + ossLocalRoot 
+                 + cinfofile.substr(0, cinfofile.rfind(".cinfo"))+ "</url>\n";
+            tmp += "  </file>\n";
+            tmp += "</metalink>\n";
+
+            fprintf(fd, "%s", tmp.c_str());
+            fclose(fd);
+        }
+        return metaLinkFile;
+    }
+    else
+        metaLinkFile = metaLinkFile.replace(metaLinkFile.rfind(".metalink"), 9, ".meta4");
+//        metaLinkFile = metaLinkDir + "/" + file + ".meta4";
 
     time_t t_now = time(NULL);
     if (stat(metaLinkFile.c_str(), &statBuf) == 0 && 
@@ -197,11 +275,6 @@ std::string getMetaLink(XrdSysError* eDest, const std::string myName, const std:
         return metaLinkFile;
     }
      
-    if (mkdir_p(metaLinkDir)) 
-    {
-        eDest->Say((myName + ": Fail to create metalink dir " + metaLinkDir).c_str());
-        return metaLinkFile;
-    }
     rucioMetaLinkURL = rucioServerUrl + scope + "/" + file + rucioServerCgi;
 
     // -f prevent an output to be created if DID doesn't exist
@@ -237,8 +310,9 @@ std::string getMetaLink(XrdSysError* eDest, const std::string myName, const std:
         // check for errors
         if(res == CURLE_OK)
         {
-            if (! strncmp(chunk.data, "HTTP/1.1 200 OK", 15) ||
-                ! strncmp(chunk.data + chunk.size - 11, "</metalink>", 11)) // simple sanity check
+            if (! strncmp(chunk.data, "HTTP/1.1 200 OK", 15) &&
+                (! strncmp(chunk.data + chunk.size - 11, "</metalink>", 11) || // simple sanity check
+                 ! strncmp(chunk.data + chunk.size - 12, "</metalink>", 11)))  // maybe a "\n" at the end?
             {
                 FILE *fd = fopen(metaLinkFile.c_str(), "w");
                 if (fd != NULL) 

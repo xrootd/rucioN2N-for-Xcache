@@ -13,6 +13,7 @@ XrdVERSIONINFO(XrdOucgetName2Name, "N2N-DCP4RUCIO");
 
 #include "rucioGetMetaLink.hh"
 #include "pfn2cache.hh"
+#include "checkPFCcinfo.hh"
 #include "XrdOuc/XrdOucEnv.hh"
 #include "XrdOuc/XrdOucName2Name.hh"
 #include "XrdSys/XrdSysPlatform.hh"
@@ -25,7 +26,7 @@ public:
     virtual int lfn2rfn(const char* lfn, char* buff, int blen);
     virtual int pfn2lfn(const char* lfn, char* buff, int blen);
 
-    XrdOucName2NameDiskCacheProxy4Rucio(XrdSysError *erp, const char* parms);
+    XrdOucName2NameDiskCacheProxy4Rucio(XrdSysError *erp, const char* confg, const char* parms);
     virtual ~XrdOucName2NameDiskCacheProxy4Rucio() {};
 
     friend XrdOucName2Name *XrdOucgetName2Name(XrdOucgetName2NameArgs);
@@ -35,7 +36,9 @@ private:
     bool isCmsd;
 };
 
-XrdOucName2NameDiskCacheProxy4Rucio::XrdOucName2NameDiskCacheProxy4Rucio(XrdSysError* erp, const char* parms)
+XrdOucName2NameDiskCacheProxy4Rucio::XrdOucName2NameDiskCacheProxy4Rucio(XrdSysError* erp, 
+                                                                         const char* confg,
+                                                                         const char* parms)
 {
     std::string myProg;
     std::string opts, message, key, value;
@@ -81,7 +84,7 @@ XrdOucName2NameDiskCacheProxy4Rucio::XrdOucName2NameDiskCacheProxy4Rucio(XrdSysE
             if (x == 1) value += *it;
         }
     }
-    rucioGetMetaLinkInit(localMetaLinkRootDir);
+    rucioGetMetaLinkInit(localMetaLinkRootDir, checkPFCcinfoInit(confg));
 }
 
 int XrdOucName2NameDiskCacheProxy4Rucio::lfn2pfn(const char* lfn, char* buff, int blen)
@@ -105,7 +108,7 @@ int XrdOucName2NameDiskCacheProxy4Rucio::lfn2pfn(const char* lfn, char* buff, in
 // see comments in pfn2cache()
 
     if (myLfn.find("/root:/") == 0) 
-        myPfn = makeMetaLink(lfn);  // Assume the client know the data source...
+        myPfn = makeMetaLink(eDest, myName, lfn);  // Assume the client know the data source...
     else
     {
         i = myLfn.rfind("/atlas/rucio");
@@ -156,7 +159,7 @@ XrdOucName2Name *XrdOucgetName2Name(XrdOucgetName2NameArgs)
 
     if (inst) return (XrdOucName2Name *)inst;
 
-    inst = new XrdOucName2NameDiskCacheProxy4Rucio(eDest, parms);
+    inst = new XrdOucName2NameDiskCacheProxy4Rucio(eDest, confg, parms);
     if (!inst) return NULL;
 
     return (XrdOucName2Name *)inst;
