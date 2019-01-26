@@ -11,15 +11,13 @@ using namespace std;
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
-#include "XrdFileCache/XrdFileCachePrint.hh"
 #include "XrdOuc/XrdOucEnv.hh"
 #include "XrdOuc/XrdOucStream.hh"
-#include "XrdOuc/XrdOucArgs.hh"
 #include "XrdSys/XrdSysTrace.hh"
 #include "XrdOfs/XrdOfsConfigPI.hh"
 #include "XrdSys/XrdSysLogger.hh"
+#include "XrdOss/XrdOss.hh"
 #include "XrdFileCache/XrdFileCacheInfo.hh"
-#include "XrdOss/XrdOssApi.hh"
 
 //______________________________________________________________________________
 
@@ -32,7 +30,10 @@ std::string checkPFCcinfoInit(const char* confg)
     XrdSysLogger log;
     XrdSysError err(&log);
 
-    XrdOucStream Config(&err, NULL, &myEnv, "=====> ");
+    int fd = open(confg, O_RDONLY, 0);
+    
+    XrdOucStream Config(&err, getenv("XRDINSTANCE"), &myEnv, "=====> ");
+    Config.Attach(fd);
 
     // suppress oss init messages
     int efs = open("/dev/null",O_RDWR, 0);
@@ -45,11 +46,9 @@ std::string checkPFCcinfoInit(const char* confg)
     else
         oss = NULL;
 
-    int fd = open(confg, O_RDONLY, 0);
-    Config.Attach(fd);
-    int n = Config.FDNum();
+//    int n = Config.FDNum();
     char *var;
-    while((var = Config.GetFirstWord()))
+    while((var = Config.GetMyFirstWord()))
     {
         if (! strncmp(var,"oss.localroot", strlen("oss.localroot")))
         {
@@ -67,7 +66,7 @@ bool checkPFCcinfoIsComplete(std::string cinfofile)
 
    if (oss == NULL) return false;
 
-   XrdOssFile* fh = (XrdOssFile*) oss->newFile("nobody");
+   XrdOssDF* fh = oss->newFile("nobody");
    fh->Open(cinfofile.c_str(), O_RDONLY, 0600, myEnv);
 
    struct stat stBuf;
@@ -77,6 +76,7 @@ bool checkPFCcinfoIsComplete(std::string cinfofile)
    {
        XrdSysTrace tr(""); tr.What = 2;
        XrdFileCache::Info cfi(&tr);
+//       XrdFileCache::Info cfi(NULL);
 
        if (! cfi.Read(fh))
            rc = false;
