@@ -9,7 +9,7 @@ using namespace std;
 #include <errno.h>
 #include <openssl/md5.h>
 #include "XrdVersion.hh"
-XrdVERSIONINFO(XrdOucgetName2Name, "N2N-DCP4RUCIO");
+XrdVERSIONINFO(XrdOucgetName2Name, "N2N-Xcache4RUCIO");
 
 #include "rucioGetMetaLink.hh"
 #include "pfn2cache.hh"
