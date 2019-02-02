@@ -4,6 +4,6 @@
 
 #include "XrdSys/XrdSysError.hh"
 
-void rucioGetMetaLinkInit(const std::string, const std::string);
+void rucioGetMetaLinkInit(const std::string, const std::string, const std::string, const std::string);
 string getMetaLink(XrdSysError*, const std::string, const std::string);
 string makeMetaLink(XrdSysError*, const std::string, const std::string);

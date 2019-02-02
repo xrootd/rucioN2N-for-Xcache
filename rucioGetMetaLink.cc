@@ -35,14 +35,15 @@ std::string rucioServerCgi = "/metalink?schemes=root&sort=geoip";
 #define MetaLinkLifeTmin 1440 
 #define MetaLinkLifeTsec MetaLinkLifeTmin*60
 
+static std::string localMetaLinkRootDir;
+static std::string ossLocalRoot;
+static std::string gLFNprefix;
+
 struct rucioMetaLink
 {
     char *data;
     size_t size;
 };
-
-std::string localMetaLinkRootDir;
-std::string ossLocalRoot;
 
 void cleaner()
 {
@@ -59,9 +60,11 @@ void cleaner()
 
 static int Xcache4RUCIO_DBG = 0;
 
-void rucioGetMetaLinkInit(const std::string dir, const std::string osslocalroot) 
+void rucioGetMetaLinkInit(const std::string dir, const std::string glfnprefix, const std::string rucioserver, const std::string osslocalroot) 
 {
      localMetaLinkRootDir = dir;
+     gLFNprefix = glfnprefix;
+     rucioServerUrl = "https://" + rucioserver + "/redirect/";
      ossLocalRoot = osslocalroot;
 
      std::thread cleanning(cleaner);
@@ -119,26 +122,26 @@ int mkdir_p(const std::string dir)
 // data source at file://localhost//... so that we don't need to Open() with a remote data source.
 std::string makeMetaLink(XrdSysError* eDest, const std::string myName, const std::string pfn)
 {
-    std::string metaLinkDir, metaLinkFile, myPfn, tmp;
+    std::string metaLinkDir, metaLinkFile, myPfn, proto, tmp;
     size_t i;
 
     // "repair" pfn, from "/root:/atlrdr1:11094/xrootd" to "root://atlrdr1:11094//xrootd"
+    // we will also need to consider other protocols such as file: http: https:
     myPfn = pfn;
-    myPfn.replace(0, 7, "");
-    myPfn.replace(myPfn.find("/"), 1, "//");
-    myPfn = "root://" + myPfn;
+    proto = myPfn.substr(1, myPfn.find(":/")); // "root:", not "root"
+    myPfn.replace(0, proto.length()+2, "");
+    if (proto == "root:") myPfn.replace(myPfn.find("/"), 1, "//"); // this is the / or // right before path
+    myPfn = proto + "//" + myPfn;
 
     XrdCl::URL rootURL = myPfn;
-    if (!rootURL.IsValid()) return "EFAULT"; 
+    if (proto == "root:" && !rootURL.IsValid()) return "EFAULT"; 
 
     metaLinkFile = myPfn;
-    if (metaLinkFile.find("root://") == 0)
-    {
-        metaLinkFile = metaLinkFile.replace(0, 7, "");   // remote "root://"
-        metaLinkFile = metaLinkFile.replace(0, metaLinkFile.find("/")+2, "");  // remote loginid@hostnaem:port//
-    }
+    metaLinkFile = metaLinkFile.replace(0, proto.length()+2, "");         // remove "root://"
+    metaLinkFile = metaLinkFile.replace(0, metaLinkFile.find("/"), "");   // remove loginid@hostnaem:port/
+    if (metaLinkFile.substr(0, 1) == "/") metaLinkFile.replace(0, 1, ""); // remove the next leading /
 
-    std::string cinfofile = "/" + pfn2cache("", metaLinkFile.c_str()) + ".cinfo";
+    std::string cinfofile = "/" + pfn2cache("", gLFNprefix, metaLinkFile.c_str()) + ".cinfo";
     metaLinkFile = localMetaLinkRootDir + "/" + metaLinkFile + ".metalink";
 
     metaLinkDir = metaLinkFile;
@@ -230,11 +233,11 @@ std::string getMetaLink(XrdSysError* eDest, const std::string myName, const std:
 
     std::string cinfofile;
 
-    cinfofile = "/atlas/rucio/" + slashScope + "/"
+    cinfofile = gLFNprefix + "/" + slashScope + "/"
                 + tmp.substr(0, 2) + "/" + tmp.substr(2, 2) + "/"
                 + file + ".cinfo";
     
-    metaLinkDir = localMetaLinkRootDir + "/atlas/rucio/" + slashScope + "/" 
+    metaLinkDir = localMetaLinkRootDir + gLFNprefix + "/" + slashScope + "/" 
                 + tmp.substr(0, 2) + "/" + tmp.substr(2, 2);
     if (mkdir_p(metaLinkDir)) 
     {

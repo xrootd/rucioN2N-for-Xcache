@@ -8,7 +8,7 @@ using namespace std;
 #include <string>
 #include <openssl/md5.h>
 
-std::string pfn2cache(const std::string localMetaLinkRootDir, const char* pfn) 
+std::string pfn2cache(const std::string localMetaLinkRootDir, const std::string gLFNprefix, const char* pfn) 
 {
 // rucioDID isn't quite ruico DID (scrope:file), rucioDID = scrope/XX/XX/file
 
@@ -42,6 +42,10 @@ std::string pfn2cache(const std::string localMetaLinkRootDir, const char* pfn)
     // if pfn does have "/rucio/", rucioDID will point to the string after the last 
     // "rucio", including the leading "/"
     //     buff = /atlas/rucio<rucioDID>
+    //
+    // It is risky to only depend on "Is "/rucio/" in path" to determine if the path is a RUCIO path.
+    // It is better to check the string after "/rucio/" to see whether it is in the form of scope:file 
+    // or scope/xx/xx/file (hash "/xx/xx/" could be checked)
     if (i == string::npos)
         cachePath = myPfn;
     else
@@ -78,7 +82,7 @@ std::string pfn2cache(const std::string localMetaLinkRootDir, const char* pfn)
             rucioDID = "/" + slashScope + "/" + tmp.substr(0, 2) + "/" + tmp.substr(2, 2) + "/" + file;
         }
         
-        cachePath = "/atlas/rucio" + rucioDID;
+        cachePath = gLFNprefix + rucioDID;
     }
     return cachePath;
 }
