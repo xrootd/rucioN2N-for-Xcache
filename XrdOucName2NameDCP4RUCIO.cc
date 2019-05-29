@@ -122,7 +122,7 @@ int XrdOucName2NameDiskCacheProxy4Rucio::lfn2pfn(const char* lfn, char* buff, in
     myLfn = lfn;
 // see comments in pfn2cache()
 
-    // Do not allow users to specify file:// or root://localhost 
+    // Do not allow users to specify file:// or root://localfile
     if (myLfn.find("/root:/localfile") == 0 || myLfn.find("/file:/") == 0)
     {
         myPfn = "ENOENT"; 
