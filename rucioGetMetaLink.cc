@@ -16,7 +16,7 @@ using namespace std;
 #include <openssl/md5.h>
 #include <string>
 #include <thread>
-#include "checkPFCcinfo.hh"
+#include "cacheQuery.hh"
 #include "pfn2cache.hh"
 #include "XrdCl/XrdClURL.hh"
 #include "XrdSys/XrdSysError.hh"
@@ -36,7 +36,6 @@ std::string rucioServerCgi = "/metalink?schemes=root&sort=geoip";
 #define MetaLinkLifeTsec MetaLinkLifeTmin*60
 
 static std::string localMetaLinkRootDir;
-static std::string ossLocalRoot;
 static std::string gLFNprefix;
 
 struct rucioMetaLink
@@ -60,12 +59,11 @@ void cleaner()
 
 static int Xcache4RUCIO_DBG = 0;
 
-void rucioGetMetaLinkInit(const std::string dir, const std::string glfnprefix, const std::string rucioserver, const std::string osslocalroot) 
+void rucioGetMetaLinkInit(const std::string dir, const std::string glfnprefix, const std::string rucioserver)
 {
      localMetaLinkRootDir = dir;
      gLFNprefix = glfnprefix;
      rucioServerUrl = "https://" + rucioserver + "/redirect/";
-     ossLocalRoot = osslocalroot;
 
      std::thread cleanning(cleaner);
      cleanning.detach();
@@ -141,7 +139,7 @@ std::string makeMetaLink(XrdSysError* eDest, const std::string myName, const std
     metaLinkFile = metaLinkFile.replace(0, metaLinkFile.find("/"), "");   // remove loginid@hostnaem:port/
     if (metaLinkFile.substr(0, 1) == "/") metaLinkFile.replace(0, 1, ""); // remove the next leading /
 
-    std::string cinfofile = "/" + pfn2cache("", gLFNprefix, metaLinkFile.c_str()) + ".cinfo";
+    std::string cachefile = pfn2cache("", gLFNprefix, metaLinkFile.c_str());
     metaLinkFile = localMetaLinkRootDir + "/" + metaLinkFile + ".metalink";
 
     metaLinkDir = metaLinkFile;
@@ -157,7 +155,8 @@ std::string makeMetaLink(XrdSysError* eDest, const std::string myName, const std
     if (! stat(metaLinkFile.c_str(), &statBuf))
         return metaLinkFile;
 
-    if (checkPFCcinfoIsComplete(cinfofile))
+    std::string localfile;
+    if (cachedFileIsComplete(cachefile, &localfile) == 1)
     {
         FILE *fd = fopen(metaLinkFile.c_str(), "w");
         if (fd != NULL)
@@ -165,8 +164,7 @@ std::string makeMetaLink(XrdSysError* eDest, const std::string myName, const std
             tmp  = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
             tmp += "<metalink xmlns=\"urn:ietf:params:xml:ns:metalink\">\n";
             tmp += "  <file name=\"x\">\n";
-            tmp += "    <url location=\"LOCAL\" priority=\"1\">file://localhost/" + ossLocalRoot
-                 + cinfofile.substr(0, cinfofile.rfind(".cinfo"))+ "</url>\n";
+            tmp += "    <url location=\"LOCAL\" priority=\"1\">file://localhost/" + localfile + "</url>\n";
             tmp += "  </file>\n";
             tmp += "</metalink>\n";
 
@@ -231,11 +229,8 @@ std::string getMetaLink(XrdSysError* eDest, const std::string myName, const std:
     md5string[2*2+1] = '\0';
     tmp = md5string;
 
-    std::string cinfofile;
-
-    cinfofile = gLFNprefix + "/" + slashScope + "/"
-                + tmp.substr(0, 2) + "/" + tmp.substr(2, 2) + "/"
-                + file + ".cinfo";
+    std::string cachefile = gLFNprefix + "/" + slashScope + "/"
+                          + tmp.substr(0, 2) + "/" + tmp.substr(2, 2) + "/" + file;
     
     metaLinkDir = localMetaLinkRootDir + gLFNprefix + "/" + slashScope + "/" 
                 + tmp.substr(0, 2) + "/" + tmp.substr(2, 2);
@@ -249,7 +244,8 @@ std::string getMetaLink(XrdSysError* eDest, const std::string myName, const std:
     if (! stat(metaLinkFile.c_str(), &statBuf))
         return metaLinkFile;
 
-    if (checkPFCcinfoIsComplete(cinfofile))
+    std::string localfile;
+    if (cachedFileIsComplete(cachefile, &localfile) == 1) 
     {
         FILE *fd = fopen(metaLinkFile.c_str(), "w");
         if (fd != NULL) 
@@ -257,8 +253,7 @@ std::string getMetaLink(XrdSysError* eDest, const std::string myName, const std:
             tmp  = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
             tmp += "<metalink xmlns=\"urn:ietf:params:xml:ns:metalink\">\n";
             tmp += "  <file name=\"x\">\n";
-            tmp += "    <url location=\"LOCAL\" priority=\"1\">file://localhost/" + ossLocalRoot 
-                 + cinfofile.substr(0, cinfofile.rfind(".cinfo"))+ "</url>\n";
+            tmp += "    <url location=\"LOCAL\" priority=\"1\">file://localhost/" + localfile + "</url>\n";
             tmp += "  </file>\n";
             tmp += "</metalink>\n";
 

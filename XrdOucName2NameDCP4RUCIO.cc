@@ -13,7 +13,6 @@ XrdVERSIONINFO(XrdOucgetName2Name, "N2N-Xcache4RUCIO");
 
 #include "rucioGetMetaLink.hh"
 #include "pfn2cache.hh"
-#include "checkPFCcinfo.hh"
 #include "XrdOuc/XrdOucEnv.hh"
 #include "XrdOuc/XrdOucName2Name.hh"
 #include "XrdSys/XrdSysPlatform.hh"
@@ -99,7 +98,7 @@ XrdOucName2NameDiskCacheProxy4Rucio::XrdOucName2NameDiskCacheProxy4Rucio(XrdSysE
     message = myName + " Init: RUCIO metalink server = " + rucioServer;
     eDest->Say(message.c_str());
 
-    rucioGetMetaLinkInit(localMetaLinkRootDir, gLFNprefix, rucioServer, checkPFCcinfoInit(confg));
+    rucioGetMetaLinkInit(localMetaLinkRootDir, gLFNprefix, rucioServer);
 }
 
 int XrdOucName2NameDiskCacheProxy4Rucio::lfn2pfn(const char* lfn, char* buff, int blen)
