@@ -63,7 +63,7 @@ if \$(redirector)
     cms.delay startup 10
 else if exec cmsd
     all.role server
-    oss.statlib /usr/lib64/XrdName2NameDCP4RUCIO.so
+    oss.statlib XrdName2NameDCP4RUCIO.so
 else
     oss.space meta /data/xrd/xrdcinfos
     oss.space data /data/xrd/datafiles
@@ -72,11 +72,12 @@ else
     oss.path /atlas/rucio r/w
     oss.path /root:/      r/w
     oss.path /xroot:/     r/w
-    ofs.osslib   /usr/lib64/libXrdPss.so
-    pss.cachelib /usr/lib64/libXrdFileCache.so
+    ofs.osslib   libXrdPss.so
+    pss.cachelib libXrdFileCache.so
     pss.config streams 128
     pss.origin localfile:1094
-    pss.namelib -lfncache -lfn2pfn /usr/lib64/XrdName2NameDCP4RUCIO.so
+    pss.namelib -lfncache -lfn2pfn XrdName2NameDCP4RUCIO.so
+    pss.ccmlib XrdName2NameDCP4RUCIO.so
 
     pfc.ram XCACHE_RAMSIZE
     pfc.diskusage XCACHE_SPACE_LO_MARK XCACHE_SPACE_HI_MARK
@@ -86,9 +87,9 @@ else
     pfc.trace info
 
     # Uncomment the following and bind mount to /etc/xrootd/xcache.cfg to request GSI security from client
-    #xrootd.seclib /usr/lib64/libXrdSec.so
-    #sec.protparm gsi -vomsfun:/usr/lib64/libXrdSecgsiVOMS.so -vomsfunparms:certfmt=raw|vos=atlas|grps=/atlas
-    #sec.protocol /usr/lib64 gsi -ca:1 -crl:3
+    #xrootd.seclib libXrdSec.so
+    #sec.protparm gsi -vomsfun:/usr/lib64/libXrdSecgsiVOMS.so -vomsfunparms:certfmt=pem|vos=atlas|grps=/atlas
+    #sec.protocol gsi -ca:1 -crl:3
     #acc.authdb /etc/xrootd/auth_db
     #acc.authrefresh 60
     #ofs.authorize
