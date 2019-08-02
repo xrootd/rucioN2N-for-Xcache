@@ -1,0 +1,21 @@
+2017-10-04: v1.0
+  * Inital version that assume /atlas/rucio is the gLFN prefix (files starting
+     with /atlas/rucio follows gLFN convention), and query RUCIO to obtain a 
+     list of data sources in metalink.
+2018-09-09: v1.1
+  * Tagged but didn't release
+2019-08-02: v1.2
+  * Allows configurable gLFN prefix and rucio server hostname. This will enable
+    support of non-ATLAS usage. The default is ATLAS.
+  * Check the completeness of the downloaded metalink file.
+  * Prepare to support data sources of non-xroot protocol, mainly HTTP.
+  * For destinations that don't start with gLFN prefix and don't start with 
+    root:// (e.g. not used as a forward proxy), assume the file is on local 
+    storage. This requires enableing the path via all.export in the xrootd 
+    configuration file. This is a NERSC use case.
+  * Use the XrdPosixCache/Cache management interface to check the completeness
+    of a cached file. For a completely cached file, generate a metalink rather 
+    than query RUCIO.
+    ** Require xrootd 4.10 and above.
+    ** xrootd 4.10 also fixed a number of issues in handling redirection in
+       metalink files when data sources aren't function as expected.
