@@ -2,6 +2,7 @@
   * Inital version that assume /atlas/rucio is the gLFN prefix (files starting
      with /atlas/rucio follows gLFN convention), and query RUCIO to obtain a 
      list of data sources in metalink.
+  ** Require xrootd 4.8.1 and above.
 2018-09-09: v1.1
   * Tagged but didn't release
 2019-08-02: v1.2
