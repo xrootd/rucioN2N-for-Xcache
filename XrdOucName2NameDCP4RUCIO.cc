@@ -128,13 +128,18 @@ int XrdOucName2NameDiskCacheProxy4Rucio::lfn2pfn(const char* lfn, char* buff, in
         return EFAULT;
     }
 
-    if (myLfn.find("/root:/") == 0 || myLfn.find("/http:/") == 0 || myLfn.find("/https:/") == 0) 
+    if (myLfn.find("/root:/") == 0 || myLfn.find("/roots:/") == 0 ||
+        myLfn.find("/http:/") == 0 || myLfn.find("/https:/") == 0) 
         myPfn = makeMetaLink(eDest, myName, lfn);  // Assume the client know the data source...
     else if ((i = myLfn.rfind(gLFNprefix)) != 0)
     {
         // client want so access a local file that is permitted by the xcache configuration
+
+        /* Do not allow this kind of access (security)
         myLfn = "/file:/localhost" + myLfn;
         myPfn = makeMetaLink(eDest, myName, myLfn.c_str());
+        */
+        myPfn = "EFAULT";
     }
     else // gLFN
     {
