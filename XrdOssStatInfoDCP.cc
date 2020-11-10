@@ -37,6 +37,7 @@ int XrdOssStatInfo(const char *path, struct stat *buff,
      else 
      {
          i = tmp.find("/root:/");
+         if (i == string::npos) i = tmp.find("/roots:/");
          if (i == string::npos) i = tmp.find("/http:/");
          if (i == string::npos) i = tmp.find("/https:/");
       
