@@ -128,16 +128,14 @@ std::string makeMetaLink(XrdSysError* eDest, const std::string myName, const std
     myPfn = pfn;
     proto = myPfn.substr(1, myPfn.find(":/")); // "root:", not "root"
     myPfn.replace(0, proto.length()+2, "");
-    if (proto == "root:" || proto == "roots:") 
-        myPfn.replace(myPfn.find("/"), 1, "//"); // this is the / or // right before path
+    if (proto == "root:") myPfn.replace(myPfn.find("/"), 1, "//"); // this is the / or // right before path
     myPfn = proto + "//" + myPfn;
 
     XrdCl::URL rootURL = myPfn;
     if (proto == "root:" && !rootURL.IsValid()) return "EFAULT"; 
-    if (proto == "roots:" && !rootURL.IsValid()) return "EFAULT"; 
 
     metaLinkFile = myPfn;
-    metaLinkFile = metaLinkFile.replace(0, proto.length()+2, "");         // remove "root://" or "roots://"
+    metaLinkFile = metaLinkFile.replace(0, proto.length()+2, "");         // remove "root://"
     metaLinkFile = metaLinkFile.replace(0, metaLinkFile.find("/"), "");   // remove loginid@hostnaem:port/
     if (metaLinkFile.substr(0, 1) == "/") metaLinkFile.replace(0, 1, ""); // remove the next leading /
 
