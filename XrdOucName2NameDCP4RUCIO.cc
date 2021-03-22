@@ -146,13 +146,18 @@ int XrdOucName2NameDiskCacheProxy4Rucio::lfn2pfn(const char* lfn, char* buff, in
         // with a leading "/"
         rucioDID = myLfn.substr(i + gLFNprefix.length(), myLfn.length() -i - gLFNprefix.length()); 
         if (rucioDID.rfind("/") < rucioDID.rfind(":") && rucioDID.rfind(":") != string::npos)
-        // check if this is /atlas/rucio/scope:file format
+        // check if this is /scope:file format
             myPfn = getMetaLink(eDest, myName, rucioDID);
         else
         {
-        // otherwise, assume this is /atlas/rucio/scope/xx/xx/file format
-            rucioDID = rucioDID.replace(rucioDID.rfind("/") -6, 7, ":");
-            myPfn = getMetaLink(eDest, myName, rucioDID);           
+        // otherwise, assume this is /scope/xx/xx/file format.
+        // At minimum, it should be /s/xx/xx/file (the last / is at position 8)
+            if (rucioDID.rfind("/") < 8)
+                myPfn = EFAULT;   // mal-formatted
+            else {
+                rucioDID = rucioDID.replace(rucioDID.rfind("/") -6, 7, ":");
+                myPfn = getMetaLink(eDest, myName, rucioDID); 
+            }          
         }
     }
     if (myPfn == "EFAULT")
