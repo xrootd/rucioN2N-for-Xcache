@@ -30,6 +30,7 @@ XrdOucCacheCMInit_t XrdOucCacheCMInit(XrdPosixCache &Cache,
                                       XrdOucEnv     *envP)
 {
     myCache = &Cache;
+    return (XrdOucCacheCMInit_t)true;
 }
 };
 XrdVERSIONINFO(XrdOucCacheCMInit,CacheCM-4-RUCIO);

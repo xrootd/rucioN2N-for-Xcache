@@ -30,7 +30,7 @@ public:
 
     friend XrdOucName2Name *XrdOucgetName2Name(XrdOucgetName2NameArgs);
 private:
-    string myName, localMetaLinkRootDir, gLFNprefix, rucioServer;
+    string myName, localMetaLinkRootDir, gLFNprefix, rucioServer, preferredSiteDomains;
     XrdSysError *eDest;
     bool isCmsd;
 };
@@ -50,6 +50,7 @@ XrdOucName2NameDiskCacheProxy4Rucio::XrdOucName2NameDiskCacheProxy4Rucio(XrdSysE
     localMetaLinkRootDir = "";
     gLFNprefix = "/atlas/rucio";
     rucioServer = "rucio-lb-prod.cern.ch";
+    preferredSiteDomains = "";
     
     isCmsd = false;
     if (getenv("XRDPROG")) 
@@ -78,6 +79,8 @@ XrdOucName2NameDiskCacheProxy4Rucio::XrdOucName2NameDiskCacheProxy4Rucio(XrdSysE
                 gLFNprefix = value;
             else if (key == "rucioserver")
                 rucioServer = value;
+            else if (key == "preferredDomains")
+                preferredSiteDomains = value;
             key = "";
             value = "";  
             x = 0;
@@ -98,7 +101,7 @@ XrdOucName2NameDiskCacheProxy4Rucio::XrdOucName2NameDiskCacheProxy4Rucio(XrdSysE
     message = myName + " Init: RUCIO metalink server = " + rucioServer;
     eDest->Say(message.c_str());
 
-    rucioGetMetaLinkInit(localMetaLinkRootDir, gLFNprefix, rucioServer);
+    rucioGetMetaLinkInit(localMetaLinkRootDir, gLFNprefix, rucioServer, preferredSiteDomains);
 }
 
 int XrdOucName2NameDiskCacheProxy4Rucio::lfn2pfn(const char* lfn, char* buff, int blen)

@@ -18,6 +18,7 @@ using namespace std;
 #include <thread>
 #include "cacheQuery.hh"
 #include "pfn2cache.hh"
+#include "sortMetaLink.hh"
 #include "XrdCl/XrdClURL.hh"
 #include "XrdSys/XrdSysError.hh"
 
@@ -37,6 +38,7 @@ std::string rucioServerCgi = "/metalink?schemes=root&sort=geoip";
 
 static std::string localMetaLinkRootDir;
 static std::string gLFNprefix;
+static std::string preferredSiteDomains;
 
 struct rucioMetaLink
 {
@@ -59,10 +61,14 @@ void cleaner()
 
 static int Xcache4RUCIO_DBG = 0;
 
-void rucioGetMetaLinkInit(const std::string dir, const std::string glfnprefix, const std::string rucioserver)
+void rucioGetMetaLinkInit(const std::string dir, 
+                          const std::string glfnprefix, 
+                          const std::string rucioserver,
+                          std::string domainList)
 {
      localMetaLinkRootDir = dir;
      gLFNprefix = glfnprefix;
+     preferredSiteDomains = domainList;
      rucioServerUrl = "https://" + rucioserver + "/redirect/";
 
      std::thread cleanning(cleaner);
@@ -314,10 +320,12 @@ std::string getMetaLink(XrdSysError* eDest, const std::string myName, const std:
                 (! strncmp(chunk.data + chunk.size - 11, "</metalink>", 11) || // simple sanity check
                  ! strncmp(chunk.data + chunk.size - 12, "</metalink>", 11)))  // maybe a "\n" at the end?
             {
+                const char* xmlString = sortXMLURL(strstr(chunk.data, "<?xml"), preferredSiteDomains);
                 FILE *fd = fopen(metaLinkFile.c_str(), "w");
                 if (fd != NULL) 
                 {
-                    fprintf(fd, "%s", strstr(chunk.data, "<?xml"));
+                    fprintf(fd, "%s", xmlString);
+                    free((void*)xmlString);
                     fclose(fd);
                     if (Xcache4RUCIO_DBG > 0) 
                         eDest->Say((myName + ": Successfully download metalink for " 

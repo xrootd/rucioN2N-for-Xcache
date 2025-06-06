@@ -11,16 +11,16 @@ ifeq ($(strip $(XRD_LIB)),)
     XRD_LIB=/usr/lib64
 endif
 
-FLAGS=-D_REENTRANT -D_THREAD_SAFE -Wno-deprecated -std=c++0x 
+FLAGS=-I/usr/include/libxml2 -D_REENTRANT -D_THREAD_SAFE -Wno-deprecated -std=c++0x 
 
-HEADERS=rucioGetMetaLink.hh pfn2cache.hh cacheQuery.hh
-SOURCES=XrdOucName2NameDCP4RUCIO.cc XrdOssStatInfoDCP.cc rucioGetMetaLink.cc pfn2cache.cc cacheQuery.cc
-OBJECTS=XrdOucName2NameDCP4RUCIO.o XrdOssStatInfoDCP.o rucioGetMetaLink.o pfn2cache.o cacheQuery.o
+HEADERS=rucioGetMetaLink.hh pfn2cache.hh cacheQuery.hh sortMetaLink.hh
+SOURCES=XrdOucName2NameDCP4RUCIO.cc XrdOssStatInfoDCP.cc rucioGetMetaLink.cc pfn2cache.cc cacheQuery.cc sortMetaLink.cc
+OBJECTS=XrdOucName2NameDCP4RUCIO.o XrdOssStatInfoDCP.o rucioGetMetaLink.o pfn2cache.o cacheQuery.o sortMetaLink.o
 
 DEBUG=-g
 
 XrdName2NameDCP4RUCIO.so: $(OBJECTS) Makefile
-	g++ ${DEBUG} -shared -fPIC -o $@ $(OBJECTS) -L${XRD_LIB} -L${XRD_LIB}/XrdCl -ldl -lssl -lcurl -lXrdCl -lXrdPosix -lstdc++
+	g++ ${DEBUG} -shared -fPIC -o $@ $(OBJECTS) -L${XRD_LIB} -L${XRD_LIB}/XrdCl -ldl -lssl -lcurl -lXrdCl -lXrdPosix -lxml2 -lstdc++
 
 XrdOucName2NameDCP4RUCIO.o: XrdOucName2NameDCP4RUCIO.cc ${HEADERS} Makefile
 	g++ ${DEBUG} ${FLAGS} -fPIC -I ${XRD_INC} -I ${XRD_LIB} -c -o $@ $<
@@ -35,6 +35,9 @@ pfn2cache.o: pfn2cache.cc ${HEADERS} Makefile
 	g++ ${DEBUG} ${FLAGS} -fPIC -I ${XRD_INC} -I ${XRD_LIB} -c -o $@ $<
 
 cacheQuery.o: cacheQuery.cc ${HEADERS} Makefile
+	g++ ${DEBUG} ${FLAGS} -fPIC -I ${XRD_INC} -I ${XRD_LIB} -c -o $@ $<
+
+sortMetaLink.o: sortMetaLink.cc ${HEADERS} Makefile
 	g++ ${DEBUG} ${FLAGS} -fPIC -I ${XRD_INC} -I ${XRD_LIB} -c -o $@ $<
 
 #checkPFCcinfo.o: checkPFCcinfo.cc ${HEADERS} Makefile
