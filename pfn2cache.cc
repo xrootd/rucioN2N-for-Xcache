@@ -7,6 +7,7 @@ using namespace std;
 #include <stdio.h>
 #include <string>
 #include <openssl/md5.h>
+#include <openssl/evp.h>
 
 std::string pfn2cache(const std::string localMetaLinkRootDir, const std::string gLFNprefix, const char* pfn) 
 {
@@ -15,7 +16,6 @@ std::string pfn2cache(const std::string localMetaLinkRootDir, const std::string 
     std::string myPfn, rucioDID, cachePath;
     std::string scope, slashScope, file, tmp;
     std::size_t i;
-    MD5_CTX c;
     unsigned char md5digest[MD5_DIGEST_LENGTH];
     char md5string[MD5_DIGEST_LENGTH*2+1];
 
@@ -71,13 +71,11 @@ std::string pfn2cache(const std::string localMetaLinkRootDir, const std::string 
  
             file = rucioDID.substr(rucioDID.find(":")+1, string::npos);
 
-            MD5_Init(&c);
             rucioDID = scope + ":" + file;
-            MD5_Update(&c, rucioDID.c_str(), rucioDID.length());
-            MD5_Final(md5digest, &c);
+            EVP_Digest(rucioDID.c_str(), rucioDID.length(), md5digest, NULL, EVP_md5(), NULL);
             for(i = 0; i < MD5_DIGEST_LENGTH; ++i)
                 sprintf(&md5string[i*2], "%02x", (unsigned int)md5digest[i]);
-            md5string[MD5_DIGEST_LENGTH*2+1] = '\0';
+            md5string[MD5_DIGEST_LENGTH*2] = '\0';
             tmp = md5string;
             rucioDID = "/" + slashScope + "/" + tmp.substr(0, 2) + "/" + tmp.substr(2, 2) + "/" + file;
         }

@@ -14,6 +14,7 @@ using namespace std;
 #include <stdlib.h>
 #include <errno.h>
 #include <openssl/md5.h>
+#include <openssl/evp.h>
 #include <string>
 #include <thread>
 #include "cacheQuery.hh"
@@ -207,7 +208,6 @@ std::string getMetaLink(XrdSysError* eDest, const std::string myName, const std:
     std::string::iterator it;
     size_t i;
     int rc;
-    MD5_CTX c;
     unsigned char md5digest[MD5_DIGEST_LENGTH];
     char md5string[MD5_DIGEST_LENGTH*2+1];
     struct stat statBuf;
@@ -226,10 +226,8 @@ std::string getMetaLink(XrdSysError* eDest, const std::string myName, const std:
     file = rucioDID.substr(rucioDID.find(":")+1, std::string::npos);
 
     // check if a valid metalink file already exist. "Valid" means mtime < 7d. 
-    MD5_Init(&c);
     rucioDID = scope + ":" + file;
-    MD5_Update(&c, rucioDID.c_str(), rucioDID.length());
-    MD5_Final(md5digest, &c);
+    EVP_Digest(rucioDID.c_str(), rucioDID.length(), md5digest, NULL, EVP_md5(), NULL);
 //    for(i = 0; i < MD5_DIGEST_LENGTH; ++i)
     for(i = 0; i < 2; ++i)
         sprintf(&md5string[i*2], "%02x", (unsigned int)md5digest[i]);

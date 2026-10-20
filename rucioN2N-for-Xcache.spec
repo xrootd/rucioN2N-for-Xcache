@@ -12,7 +12,7 @@ URL:       https://github.com/wyang007/rucioN2N-for-Xcache
 Source0:   rucioN2N-for-Xcache-%{version}.tar.gz
 BuildArch: x86_64
 BuildRoot:  %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
-BuildRequires: xrootd-devel xrootd-server-devel xrootd-client-devel libcurl-devel openssl-devel
+BuildRequires: xrootd-devel xrootd-server-devel xrootd-client-devel libcurl-devel openssl-devel libxml2-devel
 
 Requires: xrootd >= 4.10.0-1 xrootd-client libcurl openssl
 

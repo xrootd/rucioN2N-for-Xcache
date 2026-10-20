@@ -23,14 +23,14 @@ using namespace std;
 XrdPosixCache *myCache;
 
 extern "C" {
-XrdOucCacheCMInit_t XrdOucCacheCMInit(XrdPosixCache &Cache,
-                                      XrdSysLogger  *Logger,
-                                      const char    *Config,
-                                      const char    *Parms,
-                                      XrdOucEnv     *envP)
+bool XrdOucCacheCMInit(XrdPosixCache &Cache,
+                       XrdSysLogger  *Logger,
+                       const char    *Config,
+                       const char    *Parms,
+                       XrdOucEnv     *envP)
 {
     myCache = &Cache;
-    return (XrdOucCacheCMInit_t)true;
+    return true;
 }
 };
 XrdVERSIONINFO(XrdOucCacheCMInit,CacheCM-4-RUCIO);
